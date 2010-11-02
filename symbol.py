@@ -28,13 +28,18 @@ default_symbol = Symbols()
 
 class Function(object):
 
-    def __init__(self, name, params):
-        self.name, self.params = name, params
+    def __init__(self, name, params, codes):
+        self.name, self.params, self.codes = name, params, codes
+        self.e = True
 
-    def __run__(self, *params):
-        pass
+    def __call__(self, code, symbols):
+        print 'function', self.name, self.codes
+        print dict(zip(self.params, code))
+        print symbols.sym_stack
 
 def define(code, symbols):
     print 'define', code
-    symbols.sym_stack[-2][code[0][0]] = Function(code[0][0], code[0][1:])
+    symbols.sym_stack[-2][code[0][0]] = \
+        Function(code[0][0], code[0][1:], code[1:])
+define.e = False
 default_symbol.add('define', define)

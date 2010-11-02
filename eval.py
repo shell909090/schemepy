@@ -10,7 +10,14 @@ import symbol
 
 def scheme_eval(codes, symbols):
     symbols.down()
-    r = symbols[codes[0]](codes[1:], symbols)
+    if symbols[codes[0]].e:
+        objs = []
+        for code in codes:
+            if isinstance(code, list):
+                objs.append(scheme_eval(code, symbols))
+            else: objs.append(code)
+        r = symbols[objs[0]](objs[1:], symbols)
+    else: r = symbols[codes[0]](codes[1:], symbols)
     symbols.up()
     return r
 
