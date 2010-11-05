@@ -7,7 +7,7 @@
 import sys
 
 def find_line_comment_end(code):
-    if code.find('\n') == -1: raise LookupError()
+    if code.find('\n') == -1: return code, ''
     info = code.partition('\n')
     return info[0] + info[1], info[2]
 
