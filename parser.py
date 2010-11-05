@@ -6,70 +6,45 @@
 '''
 import sys
 
-def find_line_comment_end(code):
-    if code.find('\n') == -1: return code, ''
-    info = code.partition('\n')
-    return info[0] + info[1], info[2]
-
-def find_quote_end(code):
-    idx, codelist = 1, [u'"']
+def find_quote_end(code, start):
+    start += 1
+    idx, codelist = start, [u'"']
     while idx < len(code):
         if code[idx] == u'\\':
-            codelist.append(code[idx+1])
+            codelist.append(code[start:idx+1])
             idx += 2
+            start = idx
         elif code[idx] == u'"':
-            codelist.append(code[idx])
-            return ''.join(codelist), code[idx+1:]
-        else:
-            codelist.append(code[idx])
-            idx += 1
+            codelist.append(code[start:idx])
+            return ''.join(codelist), idx
+        else: idx += 1
     raise Exception()
 
-match_pair = {';':find_line_comment_end, '"':find_quote_end}
-def split_match(code):
-    for k, v in match_pair.items():
-        if code.startswith(k): return v(code)
-    return None, code
-
-symbol_blank = ' \t\r\n'
-symbol1 = '()[]{};,'
-symbol2 = ['++']
-def split_header(code):
-    if code[0] in symbol_blank: return code[0], code[1:]
-    if code[:2] in symbol2: return code[:2], code[2:]
-    return code[:1], code[1:]
-
+control_code = '()\'";'
 def split_code(code):
-    chunk = ''
-    while code:
-        # print code
-        c, code = split_match(code)
-        if c:
-            if chunk: yield chunk
-            chunk = ''
+    start = 0
+    while start < len(code):
+        idxes = map(lambda c: code.find(c, start), control_code)
+        idxes = filter(lambda i: i != -1, idxes)
+        if not idxes: break
+        idx = min(idxes)
+        if code[start: idx]:
+            for c in code[start: idx].split(): yield c
+        if code[idx] == '"':
+            c, idx = find_quote_end(code, idx)
             yield c
-            continue
-        c, code = split_header(code)
-        if c in symbol_blank:
-            if chunk: yield chunk
-            chunk = ''
-            continue
-        elif c in symbol1 or c in symbol2:
-            if chunk: yield chunk
-            chunk = ''
-            yield c
-        else: chunk += c
-    if chunk: yield chunk
+        elif code[idx] == ';': idx = code.find('\n', idx)
+        else: yield code[idx]
+        start = idx+1
 
-symbol_pairs = {'(':')', '[':']', '{':'}'}
+symbol_pairs = {'(':')',}
 def build_block(chunks, igcmt, header = None):
     l = []
     for c in chunks:
         if igcmt and c.startswith(';'): continue
-        if c in symbol_pairs: l.append(build_block(chunks, igcmt, c))
-        else:
-            if header and c == symbol_pairs[header]: return l
-            l.append(c)
+        elif c in symbol_pairs: l.append(build_block(chunks, igcmt, c))
+        elif header and c == symbol_pairs[header]: return l
+        else: l.append(c)
     if header: raise Exception('symbol %s dismatch' % header)
     return l
 
@@ -77,8 +52,17 @@ def split_code_tree(code, igcmt = True):
     chunks = split_code(code)
     return build_block(chunks, igcmt)
 
+def show_level(code, lv):
+    if isinstance(code, (tuple, list)) and \
+            len(filter(lambda x: isinstance(x, (tuple, list)), code)):
+        for c in code: show_level(c, lv + 1)
+    else: print '  ' * lv, code
+
 if __name__ == '__main__':
     f = open(sys.argv[1], 'r')
     data = f.read()
     f.close()
-    print split_code_tree(data.decode('utf-8'))
+    code_tree = split_code_tree(data.decode('utf-8'))
+    show_level(code_tree, 0)
+    # print code_tree
+

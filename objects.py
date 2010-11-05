@@ -50,6 +50,7 @@ def make_list(li):
     for i in reversed(li):
         p = OPair(i, p)
         if isinstance(p.car, OQuota):
+            if p.cdr is None: raise Exception(li)
             p.car.objs = p.cdr.car
             p.cdr = p.cdr.cdr
     return p
@@ -83,6 +84,3 @@ def list_tostr(li):
         buf.append(str(p.car))
         p = p.cdr
     return '(' + ' '.join(buf) + ')'
-
-if __name__ == '__main__':
-    print make_scheme(['define', ['abc', '1'], ['display', '"abc"']])

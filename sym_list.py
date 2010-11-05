@@ -37,6 +37,16 @@ def list_cdr(symbols, objs):
 list_cdr.e = True
 evals.default_env.add('cdr', list_cdr)
 
+def list_cadr(symbols, objs):
+    return objs.car.cdr.car
+list_cadr.e = True
+evals.default_env.add('cadr', list_cadr)
+
+def list_caddr(symbols, objs):
+    return objs.car.cdr.cdr.car
+list_caddr.e = True
+evals.default_env.add('caddr', list_caddr)
+
 def list_append(symbols, objs):
     r = []
     for obj in objs:

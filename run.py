@@ -19,5 +19,5 @@ if __name__ == '__main__':
     f.close()
     code_tree = parser.split_code_tree(data.decode('utf-8'))
     obj_tree = objects.make_scheme(code_tree)
-    run_objs = objects.OPair(objects.OSymbol('eee'), obj_tree)
+    run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
     print evals.default_env.eval(run_objs)

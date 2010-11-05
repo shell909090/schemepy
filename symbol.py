@@ -10,7 +10,7 @@ import evals
 class Function(object):
 
     def __init__(self, symbols, name, params, objs):
-        self.symbols, self.name = symbols.clone(), name
+        self.symbols, self.name = symbols.clone(), name.name
         self.params, self.objs = params, objs
         self.e = True
 
@@ -34,15 +34,27 @@ def define(symbols, objs):
 define.e = False
 evals.default_env.add('define', define)
 
-def eee(symbols, objs):
+def begin(symbols, objs):
     symbols.down()
     r = symbols.evals(objs)
     symbols.up()
     return r
-eee.e = False
-evals.default_env.add('eee', eee)
+begin.e = False
+evals.default_env.add('begin', begin)
 
 def display(symbols, objs):
-    print objs.car
+    print ' '.join(map(str, list(objs)))
 display.e = True
 evals.default_env.add('display', display)
+evals.default_env.add('error', display)
+
+def is_symbol(symbols, objs):
+    return isinstance(objs.car, objects.OSymbol)
+is_symbol.e = True
+evals.default_env.add('symbol?', is_symbol)
+
+def is_eq(symbols, objs):
+    return isinstance(objs[0], objects.OSymbol) and \
+        isinstance(objs[1], objects.OSymbol) and objs[0].name == objs[1].name
+is_eq.e = True
+evals.default_env.add('eq?', is_eq)
