@@ -28,27 +28,19 @@ class Envs(object):
     def eval(self, objs):
         if objs is None: return None
         # print 'eval', objs
-        if isinstance(objs, (int, long, float)): return objs
-        elif isinstance(objs, (objects.OString)): return objs
-        elif isinstance(objs, (objects.OQuota)): return objs.objs
+        if isinstance(objs, objects.OQuota): return objs.objs
         elif isinstance(objs, objects.OSymbol): return self[objs.name]
         elif isinstance(objs, objects.OPair):
-            if isinstance(objs.car, objects.OSymbol):
-                function = self[objs.car.name]
-                if function.e:
-                    p, evaled, params = objs.cdr, [], None
-                    while p:
-                        evaled.append(self.eval(p.car))
-                        p = p.cdr
-                    for i in reversed(evaled):
-                        params = objects.OPair(i, params)
-                else: params = objs.cdr
-                return function(self, params)
+            function = self.eval(objs.car)
+            if function.e:
+                evaled = []
+                for o in objs.cdr: evaled.append(self.eval(o))
+                params = objects.make_list(evaled)
+            else: params = objs.cdr
+            return function(self, params)
+        return objs
     def evals(self, objs):
-        p = objs
-        while p:
-            r = self.eval(p.car)
-            p = p.cdr
+        for o in objs: r = self.eval(o)
         return r
 
 

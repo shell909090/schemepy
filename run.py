@@ -10,6 +10,7 @@ import objects
 import evals
 import symbol
 import sym_list
+import sym_logic
 import sym_num
 
 if __name__ == '__main__':

@@ -12,6 +12,17 @@ class OPair(object):
         if isinstance(self.cdr, OPair): return list_tostr(self)
         elif self.cdr is None: return '(%s)' % self.car
         else: return '(%s . %s)' % (self.car, self.cdr)
+    def __iter__(self):
+        p = self
+        while p:
+            yield p.car
+            p = p.cdr
+    def __getitem__(self, k):
+        p = self
+        while k > 0:
+            p = p.cdr
+            k -= 1
+        return p.car
 
 class OSymbol(object):
     def __init__(self, name): self.name = name
@@ -28,7 +39,8 @@ class OQuota(object):
 def make_scheme(obj):
     ''' make python objects to scheme objects '''
     if isinstance(obj, (int, long, float)): return obj
-    elif isinstance(obj, (list, tuple)): return make_list(obj)
+    elif isinstance(obj, (list, tuple)):
+        return make_list(map(make_scheme, obj))
     elif isinstance(obj, (unicode, str)): return make_str(obj)
 
 def make_list(li):
@@ -36,11 +48,19 @@ def make_list(li):
     if not li: return None
     p = None
     for i in reversed(li):
-        p = OPair(make_scheme(i), p)
+        p = OPair(i, p)
         if isinstance(p.car, OQuota):
             p.car.objs = p.cdr.car
             p.cdr = p.cdr.cdr
     return p
+
+def load_list(li):
+    ''' make scheme list to python list '''
+    p, r = li, []
+    while p:
+        r.append(p.car)
+        p = p.cdr
+    return r
 
 number_str = '1234567890'
 def make_str(obj):
