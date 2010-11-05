@@ -31,7 +31,7 @@ def split_match(code):
         if code.startswith(k): return v(code)
     return None, code
 
-symbol_blank = ' \r\n'
+symbol_blank = ' \t\r\n'
 symbol1 = '()[]{};,'
 symbol2 = ['++']
 def split_header(code):

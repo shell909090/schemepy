@@ -38,44 +38,17 @@ def eee(symbols, objs):
 eee.e = False
 evals.default_env.add('eee', eee)
 
-def num_add(symbols, objs):
-    p, s = objs, 0
-    while p:
-        s += p.car
-        p = p.cdr
-    return s
-num_add.e = True
-evals.default_env.add('+', num_add)
-
-def num_dec(symbols, objs):
-    p, s = objs.cdr, objs.car
-    while p:
-        s -= p.car
-        p = p.cdr
-    return s
-num_dec.e = True
-evals.default_env.add('-', num_dec)
-
-def num_eq(symbols, objs):
-    assert(isinstance(objs.car, (int, long)))
-    assert(isinstance(objs.cdr.car, (int, long)))
-    return objs.car == objs.cdr.car
-num_eq.e = True
-evals.default_env.add('=', num_eq)
-
-def num_lt(symbols, objs):
-    assert(isinstance(objs.car, (int, long)))
-    assert(isinstance(objs.cdr.car, (int, long)))
-    return objs.car < objs.cdr.car
-num_lt.e = True
-evals.default_env.add('<', num_lt)
+def logic_and(symbols, objs):
+    return objs.car and objs.cdr.car
+logic_and.e = True
+evals.default_env.add('and', logic_and)
 
 def logic_or(symbols, objs):
     return objs.car or objs.cdr.car
 logic_or.e = True
 evals.default_env.add('or', logic_or)
 
-def cond(symbols, objs):
+def logic_cond(symbols, objs):
     p, elsecase = objs, None
     while p:
         assert(isinstance(p.car, objects.OPair)), '%s format error' % p.car
@@ -85,5 +58,17 @@ def cond(symbols, objs):
         p = p.cdr
     if elsecase: return symbols.evals(elsecase)
     return None
-cond.e = False
-evals.default_env.add('cond', cond)
+logic_cond.e = False
+evals.default_env.add('cond', logic_cond)
+
+def logic_if(symbols, objs):
+    if symbols.eval(objs.car): return symbols.eval(objs.cdr.car)
+    elif objs.cdr.cdr.car: return symbols.eval(objs.cdr.cdr.car)
+    else: return None
+logic_if.e = False
+evals.default_env.add('if', logic_if)
+
+def display(symbols, objs):
+    print objs.car
+display.e = True
+evals.default_env.add('display', display)

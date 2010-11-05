@@ -9,6 +9,8 @@ import parser
 import objects
 import evals
 import symbol
+import sym_list
+import sym_num
 
 if __name__ == '__main__':
     f = open(sys.argv[1], 'r')

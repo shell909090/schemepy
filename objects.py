@@ -15,30 +15,45 @@ class OPair(object):
 
 class OSymbol(object):
     def __init__(self, name): self.name = name
-    def __repr__(self): return "'" + self.name
+    def __repr__(self): return "`" + self.name
 
 class OString(object):
     def __init__(self, v): self.str = v[1:-1]
     def __repr__(self): return '"%s"' % self.str
 
+class OQuota(object):
+    def __init__(self): self.objs = None
+    def __repr__(self): return "'" + str(self.objs)
+
 def make_scheme(obj):
     ''' make python objects to scheme objects '''
-    if isinstance(obj, (int, long)): return obj
+    if isinstance(obj, (int, long, float)): return obj
     elif isinstance(obj, (list, tuple)): return make_list(obj)
     elif isinstance(obj, (unicode, str)): return make_str(obj)
 
 def make_list(li):
     ''' make python list to scheme list '''
+    if not li: return None
     p = None
-    for i in reversed(li): p = OPair(make_scheme(i), p)
+    for i in reversed(li):
+        p = OPair(make_scheme(i), p)
+        if isinstance(p.car, OQuota):
+            p.car.objs = p.cdr.car
+            p.cdr = p.cdr.cdr
     return p
 
 number_str = '1234567890'
 def make_str(obj):
     if isinstance(obj, str): obj = obj.decode('utf-8')
-    if obj[0] == '#': pass
+    if obj[0] == '#':
+        if obj[1] == 't': return True
+        elif obj[1] == 'f': return False
+        else: raise Exception('boolean name error')
     elif obj[0] == '"': return OString(obj)
-    elif obj[0] in number_str: return int(obj)
+    elif obj[0] == "'": return OQuota()
+    elif obj[0] in number_str:
+        if '.' in obj: return float(obj)
+        else: return int(obj)
     else: return OSymbol(obj)
 
 def list_tostr(li):
