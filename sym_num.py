@@ -35,11 +35,22 @@ num_eq.e = True
 evals.default_env.add('=', num_eq)
 
 def num_lt(symbols, objs):
-    assert(isinstance(objs[0], (int, long, float)))
-    assert(isinstance(objs[1], (int, long, float)))
-    return objs[0] < objs[1]
+    return isinstance(objs[0], (int, long, float)) and \
+        isinstance(objs[1], (int, long, float)) and objs[0] < objs[1]
 num_lt.e = True
 evals.default_env.add('<', num_lt)
+
+def num_gt(symbols, objs):
+    return isinstance(objs[0], (int, long, float)) and \
+        isinstance(objs[1], (int, long, float)) and objs[0] > objs[1]
+num_gt.e = True
+evals.default_env.add('>', num_gt)
+
+def num_nlt(symbols, objs):
+    return isinstance(objs[0], (int, long, float)) and \
+        isinstance(objs[1], (int, long, float)) and objs[0] >= objs[1]
+num_nlt.e = True
+evals.default_env.add('>=', num_nlt)
 
 def num_remainder(symbols, objs):
     return objs[0] % objs[1]

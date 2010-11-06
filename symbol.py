@@ -10,7 +10,7 @@ import evals
 class Function(object):
 
     def __init__(self, symbols, name, params, objs):
-        self.symbols, self.name = symbols.clone(), name.name
+        self.symbols, self.name = symbols.clone(), name
         self.params, self.objs = params, objs
         self.e = True
 
@@ -26,13 +26,19 @@ class Function(object):
             pn, pv = pn.cdr, pv.cdr
         r = self.symbols.evals(self.objs)
         self.symbols.up()
+        # print self.name + ' end', r
         return r
 
 def define(symbols, objs):
     symbols.add(objs.car.car.name,
-                Function(symbols, objs.car.car, objs.car.cdr, objs.cdr))
+                Function(symbols, objs.car.car.name, objs.car.cdr, objs.cdr))
 define.e = False
 evals.default_env.add('define', define)
+
+def sym_lambda(symbols, objs):
+    return Function(symbols, 'lambda function', objs.car, objs.cdr)
+sym_lambda.e = False
+evals.default_env.add('lambda', sym_lambda)
 
 def begin(symbols, objs):
     symbols.down()

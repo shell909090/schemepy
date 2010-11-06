@@ -34,7 +34,8 @@ class Envs(object):
             function = self.eval(objs.car)
             if function.e:
                 evaled = []
-                for o in objs.cdr: evaled.append(self.eval(o))
+                if objs.cdr:
+                    for o in objs.cdr: evaled.append(self.eval(o))
                 params = objects.make_list(evaled)
             else: params = objs.cdr
             return function(self, params)

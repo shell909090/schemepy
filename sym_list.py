@@ -37,10 +37,20 @@ def list_cdr(symbols, objs):
 list_cdr.e = True
 evals.default_env.add('cdr', list_cdr)
 
+def list_caar(symbols, objs):
+    return objs.car.car.car
+list_caar.e = True
+evals.default_env.add('caar', list_caar)
+
 def list_cadr(symbols, objs):
     return objs.car.cdr.car
 list_cadr.e = True
 evals.default_env.add('cadr', list_cadr)
+
+def list_cdar(symbols, objs):
+    return objs.car.car.cdr
+list_cdar.e = True
+evals.default_env.add('cdar', list_cdar)
 
 def list_caddr(symbols, objs):
     return objs.car.cdr.cdr.car
@@ -65,3 +75,12 @@ def list_map(symbols, objs):
     return objects.make_list(r)
 list_map.e = True
 evals.default_env.add('map', list_map)
+
+def list_filter(symbols, objs):
+    if objs[1] is None: return None
+    r = []
+    for o in objs[1]:
+        if objs.car(symbols, objects.make_list([o,])): r.append(o)
+    return objects.make_list(r)
+list_filter.e = True
+evals.default_env.add('filter', list_filter)
