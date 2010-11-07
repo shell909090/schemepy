@@ -9,7 +9,7 @@ import evals
 
 class Function(object):
 
-    def __init__(self, symbols, name, params, objs):
+    def __init__(self, name, symbols, params, objs):
         self.symbols, self.name = symbols.clone(), name
         self.params, self.objs = params, objs
         self.e = True
@@ -31,12 +31,12 @@ class Function(object):
 
 def define(symbols, objs):
     symbols.add(objs.car.car.name,
-                Function(symbols, objs.car.car.name, objs.car.cdr, objs.cdr))
+                Function(objs.car.car.name, symbols, objs.car.cdr, objs.cdr))
 define.e = False
 evals.default_env.add('define', define)
 
 def sym_lambda(symbols, objs):
-    return Function(symbols, 'lambda function', objs.car, objs.cdr)
+    return Function('lambda function', symbols, objs.car, objs.cdr)
 sym_lambda.e = False
 evals.default_env.add('lambda', sym_lambda)
 
@@ -64,3 +64,14 @@ def is_eq(symbols, objs):
         isinstance(objs[1], objects.OSymbol) and objs[0].name == objs[1].name
 is_eq.e = True
 evals.default_env.add('eq?', is_eq)
+
+def let(symbols, objs):
+    symbols.down()
+    for p in objs.car:
+        assert(isinstance(p.car, objects.OSymbol))
+        symbols.add(p.car.name, symbols.evals(p.cdr))
+    r = symbols.evals(objs.cdr)
+    symbols.up()
+    return r
+let.e = False
+evals.default_env.add('let', let)
