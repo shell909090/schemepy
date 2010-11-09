@@ -21,7 +21,9 @@ class Envs(object):
         for i in reversed(self.stack):
             if name in i: return i[name]
         raise KeyError(name)
-    def add(self, name, value): self.stack[-1][name] = value
+    def add(self, name, value, evaled = None):
+        if evaled is not None: value.e = evaled
+        self.stack[-1][name] = value
     def down(self): self.stack.append({})
     def up(self): self.stack.pop()
 
@@ -34,8 +36,7 @@ class Envs(object):
             function = self.eval(objs.car)
             if function.e:
                 evaled = []
-                if objs.cdr:
-                    for o in objs.cdr: evaled.append(self.eval(o))
+                if objs.cdr: evaled = map(self.eval, objs.cdr)
                 params = objects.make_list(evaled)
             else: params = objs.cdr
             return function(self, params)
@@ -43,6 +44,5 @@ class Envs(object):
     def evals(self, objs):
         for o in objs: r = self.eval(o)
         return r
-
 
 default_env = Envs()

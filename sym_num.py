@@ -8,51 +8,42 @@ import evals
 
 def num_number(symbols, objs):
     return isinstance(objs.car, (int, long, float))
-num_number.e = True
-evals.default_env.add('number?', num_number)
+evals.default_env.add('number?', num_number, True)
 
 def num_add(symbols, objs):
     return sum(objs)
-num_add.e = True
-evals.default_env.add('+', num_add)
+evals.default_env.add('+', num_add, True)
 
 def num_dec(symbols, objs):
     s = objs.car
     for o in objs.cdr: s -= o
     return s
-num_dec.e = True
-evals.default_env.add('-', num_dec)
+evals.default_env.add('-', num_dec, True)
 
 def num_mul(symbols, objs):
     return reduce(lambda x, y: x*y, objs)
-num_mul.e = True
-evals.default_env.add('*', num_mul)
+evals.default_env.add('*', num_mul, True)
 
 def num_eq(symbols, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] == objs[1]
-num_eq.e = True
-evals.default_env.add('=', num_eq)
+evals.default_env.add('=', num_eq, True)
 
 def num_lt(symbols, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] < objs[1]
-num_lt.e = True
-evals.default_env.add('<', num_lt)
+evals.default_env.add('<', num_lt, True)
 
 def num_gt(symbols, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] > objs[1]
-num_gt.e = True
-evals.default_env.add('>', num_gt)
+evals.default_env.add('>', num_gt, True)
 
 def num_nlt(symbols, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] >= objs[1]
-num_nlt.e = True
-evals.default_env.add('>=', num_nlt)
+evals.default_env.add('>=', num_nlt, True)
 
 def num_remainder(symbols, objs):
     return objs[0] % objs[1]
-num_remainder.e = True
-evals.default_env.add('remainder', num_remainder)
+evals.default_env.add('remainder', num_remainder, True)

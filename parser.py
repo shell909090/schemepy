@@ -65,4 +65,3 @@ if __name__ == '__main__':
     code_tree = split_code_tree(data.decode('utf-8'))
     show_level(code_tree, 0)
     # print code_tree
-
