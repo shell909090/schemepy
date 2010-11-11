@@ -12,7 +12,7 @@ def list_list(symbols, objs):
 
 @objects.default_env.decorater('null?', True)
 def list_null(symbols, objs):
-    return objs.car is None
+    return objs.car is objects.nil
 
 @objects.default_env.decorater('pair?', True)
 def list_pair(symbols, objs):
@@ -50,19 +50,18 @@ def list_caddr(symbols, objs):
 def list_append(symbols, objs):
     r = []
     for obj in objs:
-        if obj is None: continue
+        if obj is objects.nil: continue
         for o in obj: r.append(o)
-    return objects.make_list(r)
+    return objects.to_list(r)
 
 @objects.default_env.decorater('map', True)
 def list_map(symbols, objs):
-    # TODO: to_python似乎不应当用
-    l, r = objects.to_python(objs.cdr), []
-    while l[0]:
+    l, r = list(objs.cdr), []
+    while l[0] is not objects.nil:
         t = map(lambda i: i.car, l)
-        r.append(objs.car(symbols, objects.make_list(t)))
+        r.append(objs.car(symbols, objects.to_list(t)))
         l = map(lambda i: i.cdr, l)
-    return objects.make_list(r)
+    return objects.to_list(r)
 
 @objects.default_env.decorater('filter', True)
 def list_filter(symbols, objs):

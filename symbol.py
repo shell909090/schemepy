@@ -29,8 +29,12 @@ class Function(object):
 
 @objects.default_env.decorater('define', False)
 def define(symbols, objs):
-    symbols.add(objs.car.car.name,
-                Function(objs.car.car.name, symbols, objs.car.cdr, objs.cdr))
+    if isinstance(objs[0], objects.OPair):
+        func = Function(objs.car.car.name, symbols, objs.car.cdr, objs.cdr)
+        symbols.add(objs[0].car.name, func)
+    elif isinstance(objs[0], objects.OSymbol):
+        symbols.add(objs[0].name, symbols.eval(objs[1]))
+    else: raise Exception('define format error')
 
 @objects.default_env.decorater('lambda', False)
 def sym_lambda(symbols, objs):

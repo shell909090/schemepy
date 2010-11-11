@@ -8,7 +8,7 @@
 class OException(Exception): pass
 
 class ONil(object):
-    def __repr__(self): return 'Nil'
+    def __repr__(self): return '()'
 nil = ONil()
 
 class OPair(object):
@@ -19,7 +19,7 @@ class OPair(object):
         return '(%s)' % ' '.join(map(str, self))
     def __repr__(self):
         if isinstance(self.cdr, OPair): return self._tostr()
-        elif self.cdr is None: return '(%s)' % self.car
+        elif self.cdr is nil: return '(%s)' % self.car
         else: return '(%s . %s)' % (self.car, self.cdr)
     def __iter__(self):
         p = self
@@ -62,11 +62,7 @@ def to_list(li):
             p.cdr = p.cdr.cdr
     return p
 
-def to_python(li):
-    ''' make scheme list to python list '''
-    return list(li)
-
-number_str = '1234567890.'
+number_str = '1234567890'
 def str_to_scheme(obj):
     if isinstance(obj, str): obj = obj.decode('utf-8')
     if obj[0] == '#':
@@ -115,7 +111,7 @@ class Envs(object):
             function = self.eval(objs.car)
             if function.evaled:
                 evaled = []
-                if objs.cdr: evaled = map(self.eval, objs.cdr)
+                if objs.cdr is not nil: evaled = map(self.eval, objs.cdr)
                 params = to_list(evaled)
             else: params = objs.cdr
             return function(self, params)

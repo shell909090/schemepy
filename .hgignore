@@ -2,7 +2,6 @@ syntax: glob
 
 pylint.*
 parser
-*.scm
 *.elc
 *.pyc
 *.pyo
