@@ -5,20 +5,20 @@
 @author: shell.xu
 '''
 import objects
-import evals
 
+@objects.default_env.decorater('not', True)
 def logic_not(symbols, objs):
     return not objs[0]
-evals.default_env.add('not', logic_not, True)
 
+@objects.default_env.decorater('and', True)
 def logic_and(symbols, objs):
     return objs[0] and objs[1]
-evals.default_env.add('and', logic_and, True)
 
+@objects.default_env.decorater('or', True)
 def logic_or(symbols, objs):
     return objs[0] or objs[1]
-evals.default_env.add('or', logic_or, True)
 
+@objects.default_env.decorater('cond', False)
 def logic_cond(symbols, objs):
     elsecase = None
     for o in objs:
@@ -28,10 +28,9 @@ def logic_cond(symbols, objs):
         elif symbols.eval(o.car): return symbols.evals(o.cdr)
     if elsecase: return symbols.evals(elsecase)
     return None
-evals.default_env.add('cond', logic_cond, False)
 
+@objects.default_env.decorater('if', False)
 def logic_if(symbols, objs):
     if symbols.eval(objs[0]): return symbols.eval(objs[1])
     elif objs.cdr.cdr is not None: return symbols.eval(objs[2])
     else: return None
-evals.default_env.add('if', logic_if, False)

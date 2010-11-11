@@ -5,20 +5,18 @@
 @author: shell.xu
 '''
 import objects
-import evals
 
 class Function(object):
 
     def __init__(self, name, symbols, params, objs):
         self.name, self.symbols = name, symbols.clone()
-        self.params, self.objs = params, objs
-        self.e = True
+        self.params, self.objs, self.evaled = params, objs, True
 
     def __call__(self, symbols, objs):
         # print self.name, objs
         self.symbols.down()
         pn, pv = self.params, objs
-        while pn or pv:
+        while pn is not objects.nil and pv is not objects.nil:
             if pn.car.name == '.':
                 self.symbols.add(pn.cdr.car.name, pv)
                 break
@@ -29,36 +27,37 @@ class Function(object):
         # print self.name + ' end', r
         return r
 
+@objects.default_env.decorater('define', False)
 def define(symbols, objs):
     symbols.add(objs.car.car.name,
                 Function(objs.car.car.name, symbols, objs.car.cdr, objs.cdr))
-evals.default_env.add('define', define, False)
 
+@objects.default_env.decorater('lambda', False)
 def sym_lambda(symbols, objs):
     return Function('lambda function', symbols, objs.car, objs.cdr)
-evals.default_env.add('lambda', sym_lambda, False)
 
+@objects.default_env.decorater('begin', False)
 def begin(symbols, objs):
     symbols.down()
     r = symbols.evals(objs)
     symbols.up()
     return r
-evals.default_env.add('begin', begin, False)
 
+@objects.default_env.decorater('display', True)
+@objects.default_env.decorater('error', True)
 def display(symbols, objs):
     print ' '.join(map(str, list(objs)))
-evals.default_env.add('display', display, True)
-evals.default_env.add('error', display, True)
 
+@objects.default_env.decorater('symbol?', True)
 def is_symbol(symbols, objs):
     return isinstance(objs.car, objects.OSymbol)
-evals.default_env.add('symbol?', is_symbol, True)
 
+@objects.default_env.decorater('eq?', True)
 def is_eq(symbols, objs):
     return isinstance(objs[0], objects.OSymbol) and \
         isinstance(objs[1], objects.OSymbol) and objs[0].name == objs[1].name
-evals.default_env.add('eq?', is_eq, True)
 
+@objects.default_env.decorater('let', False)
 def let(symbols, objs):
     symbols.down()
     for p in objs.car:
@@ -67,4 +66,3 @@ def let(symbols, objs):
     r = symbols.evals(objs.cdr)
     symbols.up()
     return r
-evals.default_env.add('let', let, False)

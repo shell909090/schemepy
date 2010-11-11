@@ -4,7 +4,7 @@ CC=gcc
 all: build
 
 clean:
-	rm -f *.o
+	rm -f *.o *.pyc
 
 build: parser
 
