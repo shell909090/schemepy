@@ -7,18 +7,19 @@
 
 class OException(Exception): pass
 
-class ONil(object):
+class SchemeObject(object): pass
+
+class ONil(SchemeObject):
     def __repr__(self): return '()'
+    def __iter__(self): pass
 nil = ONil()
 
-class OPair(object):
+class OPair(SchemeObject):
     def __init__(self, car = nil, cdr = nil):
         self.car, self.cdr = car, cdr
-    def _tostr(self):
-        ''' translate scheme list to str '''
-        return '(%s)' % ' '.join(map(str, self))
     def __repr__(self):
-        if isinstance(self.cdr, OPair): return self._tostr()
+        if isinstance(self.cdr, OPair):
+            return '(%s)' % ' '.join(map(str, self))
         elif self.cdr is nil: return '(%s)' % self.car
         else: return '(%s . %s)' % (self.car, self.cdr)
     def __iter__(self):
@@ -32,18 +33,25 @@ class OPair(object):
             p = p.cdr
             k -= 1
         return p.car
+    def _eval(self, envs):
+        func = envs.eval(self.car)
+        if not func.evaled: params = self.cdr
+        else: params = to_list(map(envs.eval, self.cdr))
+        return func(envs, params)
 
-class OSymbol(object):
+class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
     def __repr__(self): return "`" + self.name
+    def _eval(self, envs): return envs[self.name]
 
-class OString(object):
+class OString(SchemeObject):
     def __init__(self, v): self.str = v[1:-1]
     def __repr__(self): return '"%s"' % self.str
 
-class OQuota(object):
+class OQuota(SchemeObject):
     def __init__(self): self.objs = None
     def __repr__(self): return "'" + str(self.objs)
+    def _eval(self, envs): return self.objs
 
 def to_scheme(obj):
     ''' make python objects to scheme objects '''
@@ -91,10 +99,11 @@ class Envs(object):
         for i in reversed(self.stack):
             if name in i: return i[name]
         raise KeyError(name)
-    def add(self, name, value):
-        self.stack[-1][name] = value
+    def add(self, name, value): self.stack[-1][name] = value
     def down(self): self.stack.append({})
     def up(self): self.stack.pop()
+    def __enter__(self): self.stack.append({})
+    def __exit__(self, tp, value, traceback): self.stack.pop()
     def decorater(self, name, evaled = None):
         def inner(func):
             if evaled is not None: func.evaled = evaled
@@ -104,18 +113,8 @@ class Envs(object):
 
     def eval(self, objs):
         # print 'eval', objs
-        if objs is nil: return nil
-        elif isinstance(objs, OQuota): return objs.objs
-        elif isinstance(objs, OSymbol): return self[objs.name]
-        elif isinstance(objs, OPair):
-            function = self.eval(objs.car)
-            if function.evaled:
-                evaled = []
-                if objs.cdr is not nil: evaled = map(self.eval, objs.cdr)
-                params = to_list(evaled)
-            else: params = objs.cdr
-            return function(self, params)
-        else: return objs
+        if hasattr(objs, '_eval'): return objs._eval(self)
+        return objs
     def evals(self, objs):
         for o in objs: r = self.eval(o)
         return r
