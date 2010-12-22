@@ -8,6 +8,7 @@ from __future__ import with_statement
 import objects
 
 class Function(object):
+    DEBUG_NAME, DEBUG_END = False, False
 
     def __init__(self, name, envs, params, objs):
         self.name, self.envs = name, envs.clone()
@@ -15,7 +16,7 @@ class Function(object):
 
     def __call__(self, envs, objs):
         with self.envs:
-            # print self.name, objs
+            if self.DEBUG_NAME: print self.name, objs
             pn, pv = self.params, objs
             while pn is not objects.nil and pv is not objects.nil:
                 if pn.car.name == '.':
@@ -24,7 +25,7 @@ class Function(object):
                 self.envs.add(pn.car.name, pv.car)
                 pn, pv = pn.cdr, pv.cdr
             r = self.envs.evals(self.objs)
-            # print self.name + ' end', r
+            if self.DEBUG_END: print self.name + ' end', r
             return r
 
 @objects.default_env.decorater('define', False)
@@ -114,8 +115,8 @@ def list_map(envs, objs):
 
 @objects.default_env.decorater('filter', True)
 def list_filter(envs, objs):
-    return filter(lambda o: objs.car(envs, objects.OPair(o, objects.nil)),
-                  objs[1])
+    f = lambda o: objs.car(envs, objects.OPair(o, objects.nil))
+    return objects.to_list(filter(f, objs[1]))
 
 # logic functions
 @objects.default_env.decorater('not', True)

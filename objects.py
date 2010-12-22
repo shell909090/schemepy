@@ -11,12 +11,12 @@ class SchemeObject(object): pass
 
 class ONil(SchemeObject):
     def __repr__(self): return '()'
-    def __iter__(self): pass
+    def __iter__(self):
+        if False: yield 0
 nil = ONil()
 
 class OPair(SchemeObject):
-    def __init__(self, car = nil, cdr = nil):
-        self.car, self.cdr = car, cdr
+    def __init__(self, car = nil, cdr = nil): self.car, self.cdr = car, cdr
     def __repr__(self):
         if isinstance(self.cdr, OPair):
             return '(%s)' % ' '.join(map(str, self))

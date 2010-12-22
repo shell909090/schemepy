@@ -9,9 +9,6 @@ import unittest
 import parser
 import objects
 import symbol
-import sym_list
-import sym_logic
-import sym_num
 
 def run_scheme(filepath):
     f = open(filepath, 'r')
