@@ -12,8 +12,7 @@ def find_quote_end(code, start):
     while idx < len(code):
         if code[idx] == u'\\':
             codelist.append(code[start:idx+1])
-            idx += 2
-            start = idx
+            idx += 2; start = idx
         elif code[idx] == u'"':
             codelist.append(code[start:idx+1])
             return ''.join(codelist), idx
