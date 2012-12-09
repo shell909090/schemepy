@@ -4,7 +4,6 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-from __future__ import with_statement
 import objects
 
 class Function(object):

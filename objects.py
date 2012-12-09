@@ -110,9 +110,7 @@ class Envs(object):
             self.add(name, func)
             return func
         return inner
-
     def eval(self, objs):
-        # print 'eval', objs
         if hasattr(objs, '_eval'): return objs._eval(self)
         return objs
     def evals(self, objs):

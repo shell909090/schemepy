@@ -5,15 +5,11 @@
 @author: shell.xu
 '''
 import sys
-import parser
-import objects
-import symbol
+import parser, objects, symbol
 
 if __name__ == '__main__':
-    f = open(sys.argv[1], 'r')
-    code_tree = parser.split_code_tree(f.read().decode('utf-8'))
-    f.close()
+    with open(sys.argv[1], 'r') as f: data = f.read()
+    code_tree = parser.split_code_tree(data.decode('utf-8'))
     obj_tree = objects.to_scheme(code_tree)
     run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
-    try: print objects.default_env.eval(run_objs)
-    except Exception, err: print err
+    print objects.default_env.eval(run_objs)

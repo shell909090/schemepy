@@ -4,16 +4,12 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import sys
-import unittest
-import parser
-import objects
-import symbol
+import sys, unittest
+import parser, objects, symbol
 
 def run_scheme(filepath):
-    f = open(filepath, 'r')
-    code_tree = parser.split_code_tree(f.read().decode('utf-8'))
-    f.close()
+    with open(filepath, 'r') as f: data = f.read()
+    code_tree = parser.split_code_tree(data.decode('utf-8'))
     obj_tree = objects.to_scheme(code_tree)
     run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
     return objects.default_env.eval(run_objs)

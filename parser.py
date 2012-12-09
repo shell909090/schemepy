@@ -4,30 +4,30 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import sys
 
+replace_tab = [('\\t', '\t'), ('\\n', '\n'), ('\\', '')]
 def find_quote_end(code, start):
-    start += 1
-    idx, codelist = start, [u'"']
-    while idx < len(code):
-        if code[idx] == u'\\':
-            codelist.append(code[start:idx+1])
-            idx += 2; start = idx
-        elif code[idx] == u'"':
-            codelist.append(code[start:idx+1])
-            return ''.join(codelist), idx
-        else: idx += 1
+    idx = start
+    while True:
+        idx = code.find(u'"', idx+1)
+        if code[idx-1] != u'\\':
+            code = code[start+1:idx]
+            for k, v in replace_tab: code = code.replace(k, v)
+            return code, idx
     raise Exception()
+
+def find_str(s, start, charset):
+    for i, c in enumerate(s[start:]):
+        if c in charset: return i+start
+    return -1
 
 control_code = '()\'";'
 def split_code(code):
     start = 0
     while start < len(code):
-        idxes = map(lambda c: code.find(c, start), control_code)
-        idxes = filter(lambda i: i != -1, idxes)
-        if not idxes: break
-        idx = min(idxes)
-        if code[start: idx]:
+        idx = find_str(code, start, control_code)
+        if idx == -1: break
+        if code[start:idx]:
             for c in code[start: idx].split(): yield c
         if code[idx] == '"':
             c, idx = find_quote_end(code, idx)
@@ -47,20 +47,13 @@ def build_block(chunks, igcmt, header = None):
     if header: raise Exception('symbol %s dismatch' % header)
     return l
 
-def split_code_tree(code, igcmt = True):
-    chunks = split_code(code)
-    return build_block(chunks, igcmt)
-
-def show_level(code, lv):
-    if isinstance(code, (tuple, list)) and \
-            len(filter(lambda x: isinstance(x, (tuple, list)), code)):
-        for c in code: show_level(c, lv + 1)
-    else: print '  ' * lv, code
+def split_code_tree(code, igcmt=True):
+    return build_block(split_code(code), igcmt)
 
 if __name__ == '__main__':
-    f = open(sys.argv[1], 'r')
-    data = f.read()
-    f.close()
-    code_tree = split_code_tree(data.decode('utf-8'))
+    import sys, pprint
+    with open(sys.argv[1], 'r') as f:
+        data = f.read().decode('utf-8')
+    code_tree = split_code_tree(data)
     show_level(code_tree, 0)
-    # print code_tree
+    pprint.pprint(code_tree)
