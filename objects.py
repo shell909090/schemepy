@@ -123,6 +123,7 @@ class Envs(object):
     def __enter__(self): self.stack.append({})
     def __exit__(self, tp, value, traceback): self.stack.pop()
 
+    # trampoline化
     def eval(self, objs):
         if hasattr(objs, '__call__'): return objs(self)
         return objs
