@@ -5,6 +5,8 @@
 @author: shell.xu
 '''
 
+FUNC_DEBUG_NAME, FUNC_DEBUG_END = False, False
+
 class OException(Exception): pass
 
 class SchemeObject(object): pass
@@ -33,7 +35,7 @@ class OPair(SchemeObject):
             p = p.cdr
             k -= 1
         return p.car
-    def _eval(self, envs):
+    def __call__(self, envs):
         func = envs.eval(self.car)
         if not func.evaled: params = self.cdr
         else: params = to_list(map(envs.eval, self.cdr))
@@ -42,7 +44,7 @@ class OPair(SchemeObject):
 class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
     def __repr__(self): return "`" + self.name
-    def _eval(self, envs): return envs[self.name]
+    def __call__(self, envs): return envs[self.name]
 
 class OString(SchemeObject):
     def __init__(self, v): self.str = v[1:-1]
@@ -51,13 +53,44 @@ class OString(SchemeObject):
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
     def __repr__(self): return "'" + str(self.objs)
-    def _eval(self, envs): return self.objs
+    def __call__(self, envs): return self.objs
 
-def to_scheme(obj):
+class OFunction(SchemeObject):
+    def __init__(self, name, envs, params, objs):
+        self.name, self.envs = name, envs.clone()
+        self.params, self.objs, self.evaled = params, objs, True
+    def __repr__(self): return '<function %s>' % self.name
+    def __call__(self, envs, objs):
+        with self.envs:
+            if FUNC_DEBUG_NAME: print self.name, objs
+            pn, pv = self.params, objs
+            while pn is not nil and pv is not nil:
+                if pn.car.name == '.':
+                    self.envs.add(pn.cdr.car.name, pv)
+                    break
+                self.envs.add(pn.car.name, pv.car)
+                pn, pv = pn.cdr, pv.cdr
+            r = self.envs.evals(self.objs)
+            if FUNC_DEBUG_END: print self.name + ' end', r
+            return r
+
+def scompile(obj):
     ''' make python objects to scheme objects '''
     if isinstance(obj, (int, long, float)): return obj
-    elif isinstance(obj, (list, tuple)): return to_list(map(to_scheme, obj))
-    elif isinstance(obj, (unicode, str)): return str_to_scheme(obj)
+    elif isinstance(obj, (list, tuple)):
+        return to_list(map(scompile, obj))
+    elif isinstance(obj, (unicode, str)):
+        if isinstance(obj, str): obj = obj.decode('utf-8')
+        if obj[0] == '#':
+            if obj[1] == 't': return True
+            elif obj[1] == 'f': return False
+            else: raise Exception('boolean name error')
+        elif obj[0] == '"': return OString(obj)
+        elif obj[0] == "'": return OQuota()
+        elif obj[0].isdigit():
+            if '.' in obj: return float(obj)
+            else: return int(obj)
+        else: return OSymbol(obj)
 
 def to_list(li):
     ''' make python list to scheme list '''
@@ -70,47 +103,29 @@ def to_list(li):
             p.cdr = p.cdr.cdr
     return p
 
-number_str = '1234567890'
-def str_to_scheme(obj):
-    if isinstance(obj, str): obj = obj.decode('utf-8')
-    if obj[0] == '#':
-        if obj[1] == 't': return True
-        elif obj[1] == 'f': return False
-        else: raise Exception('boolean name error')
-    elif obj[0] == '"': return OString(obj)
-    elif obj[0] == "'": return OQuota()
-    elif obj[0] in number_str:
-        if '.' in obj: return float(obj)
-        else: return int(obj)
-    else: return OSymbol(obj)
-
 class Envs(object):
 
     def __init__(self, builtin=None):
-        if builtin is None: builtin = {}
-        self.stack = [builtin,]
+        self.stack = []
+        if builtin: self.stack.append(builtin)
     def clone(self):
         sym = Envs()
         sym.stack = self.stack[:]
         return sym
-    def __contain__(self, name):
-        for i in self.stack:
-            if name in i: return True
-        return False
     def __getitem__(self, name):
         for i in reversed(self.stack):
             if name in i: return i[name]
         raise KeyError(name)
+
     def add(self, name, value): self.stack[-1][name] = value
     def down(self): self.stack.append({})
     def up(self): self.stack.pop()
     def __enter__(self): self.stack.append({})
     def __exit__(self, tp, value, traceback): self.stack.pop()
+
     def eval(self, objs):
-        if hasattr(objs, '_eval'): return objs._eval(self)
+        if hasattr(objs, '__call__'): return objs(self)
         return objs
     def evals(self, objs):
         for o in objs: r = self.eval(o)
         return r
-
-default_env = Envs()

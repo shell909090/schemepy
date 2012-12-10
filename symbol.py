@@ -14,31 +14,10 @@ def define(name, evaled=None):
         return func
     return inner
 
-class Function(object):
-    DEBUG_NAME, DEBUG_END = False, False
-
-    def __init__(self, name, envs, params, objs):
-        self.name, self.envs = name, envs.clone()
-        self.params, self.objs, self.evaled = params, objs, True
-
-    def __call__(self, envs, objs):
-        with self.envs:
-            if self.DEBUG_NAME: print self.name, objs
-            pn, pv = self.params, objs
-            while pn is not objects.nil and pv is not objects.nil:
-                if pn.car.name == '.':
-                    self.envs.add(pn.cdr.car.name, pv)
-                    break
-                self.envs.add(pn.car.name, pv.car)
-                pn, pv = pn.cdr, pv.cdr
-            r = self.envs.evals(self.objs)
-            if self.DEBUG_END: print self.name + ' end', r
-            return r
-
 @define('define', False)
 def sym_define(envs, objs):
     if isinstance(objs[0], objects.OPair):
-        func = Function(objs.car.car.name, envs, objs.car.cdr, objs.cdr)
+        func = objects.OFunction(objs.car.car.name, envs, objs.car.cdr, objs.cdr)
         envs.add(objs[0].car.name, func)
     elif isinstance(objs[0], objects.OSymbol):
         envs.add(objs[0].name, envs.eval(objs[1]))
@@ -46,7 +25,7 @@ def sym_define(envs, objs):
 
 @define('lambda', False)
 def sym_lambda(envs, objs):
-    return Function('<lambda>', envs, objs.car, objs.cdr)
+    return objects.OFunction('<lambda>', envs, objs.car, objs.cdr)
 
 @define('begin', False)
 def begin(envs, objs):
