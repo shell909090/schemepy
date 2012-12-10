@@ -86,7 +86,9 @@ def str_to_scheme(obj):
 
 class Envs(object):
 
-    def __init__(self): self.stack = [{},]
+    def __init__(self, builtin=None):
+        if builtin is None: builtin = {}
+        self.stack = [builtin,]
     def clone(self):
         sym = Envs()
         sym.stack = self.stack[:]
@@ -104,12 +106,6 @@ class Envs(object):
     def up(self): self.stack.pop()
     def __enter__(self): self.stack.append({})
     def __exit__(self, tp, value, traceback): self.stack.pop()
-    def decorater(self, name, evaled = None):
-        def inner(func):
-            if evaled is not None: func.evaled = evaled
-            self.add(name, func)
-            return func
-        return inner
     def eval(self, objs):
         if hasattr(objs, '_eval'): return objs._eval(self)
         return objs

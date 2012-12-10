@@ -6,6 +6,14 @@
 '''
 import objects
 
+builtin={}
+def define(name, evaled=None):
+    def inner(func):
+        if evaled is not None: func.evaled = evaled
+        builtin[name] = func
+        return func
+    return inner
+
 class Function(object):
     DEBUG_NAME, DEBUG_END = False, False
 
@@ -27,8 +35,8 @@ class Function(object):
             if self.DEBUG_END: print self.name + ' end', r
             return r
 
-@objects.default_env.decorater('define', False)
-def define(envs, objs):
+@define('define', False)
+def sym_define(envs, objs):
     if isinstance(objs[0], objects.OPair):
         func = Function(objs.car.car.name, envs, objs.car.cdr, objs.cdr)
         envs.add(objs[0].car.name, func)
@@ -36,29 +44,29 @@ def define(envs, objs):
         envs.add(objs[0].name, envs.eval(objs[1]))
     else: raise Exception('define format error')
 
-@objects.default_env.decorater('lambda', False)
+@define('lambda', False)
 def sym_lambda(envs, objs):
     return Function('<lambda>', envs, objs.car, objs.cdr)
 
-@objects.default_env.decorater('begin', False)
+@define('begin', False)
 def begin(envs, objs):
     with envs: return envs.evals(objs)
 
-@objects.default_env.decorater('display', True)
-@objects.default_env.decorater('error', True)
+@define('display', True)
+@define('error', True)
 def display(envs, objs): print ' '.join(map(str, list(objs)))
 
-@objects.default_env.decorater('symbol?', True)
+@define('symbol?', True)
 def is_symbol(envs, objs): return isinstance(objs.car, objects.OSymbol)
 
-@objects.default_env.decorater('eq?', True)
+@define('eq?', True)
 def is_eq(envs, objs):
     if isinstance(objs[0], objects.OSymbol) and \
             isinstance(objs[1], objects.OSymbol):
         return objs[0].name == objs[1].name
     else: return objs[0] is objs[1]
 
-@objects.default_env.decorater('let', False)
+@define('let', False)
 def let(envs, objs):
     with envs:
         for p in objs.car:
@@ -67,43 +75,43 @@ def let(envs, objs):
         return envs.evals(objs.cdr)
 
 # list functions
-@objects.default_env.decorater('list', True)
+@define('list', True)
 def list_list(envs, objs): return objs
 
-@objects.default_env.decorater('null?', True)
+@define('null?', True)
 def list_null(envs, objs): return objs.car is objects.nil
 
-@objects.default_env.decorater('pair?', True)
+@define('pair?', True)
 def list_pair(envs, objs): return isinstance(objs.car, objects.OPair)
 
-@objects.default_env.decorater('cons', True)
+@define('cons', True)
 def list_cons(envs, objs): return objects.OPair(objs[0], objs[1])
 
-@objects.default_env.decorater('car', True)
+@define('car', True)
 def list_car(envs, objs): return objs.car.car
 
-@objects.default_env.decorater('cdr', True)
+@define('cdr', True)
 def list_cdr(envs, objs): return objs.car.cdr
 
-@objects.default_env.decorater('caar', True)
+@define('caar', True)
 def list_caar(envs, objs): return objs.car.car.car
 
-@objects.default_env.decorater('cadr', True)
+@define('cadr', True)
 def list_cadr(envs, objs): return objs.car.cdr.car
 
-@objects.default_env.decorater('cdar', True)
+@define('cdar', True)
 def list_cdar(envs, objs): return objs.car.car.cdr
 
-@objects.default_env.decorater('caddr', True)
+@define('caddr', True)
 def list_caddr(envs, objs): return objs.car.cdr.cdr.car
 
-@objects.default_env.decorater('append', True)
+@define('append', True)
 def list_append(envs, objs):
     r = []
     for obj in objs: r.extend(obj)
     return objects.to_list(r)
 
-@objects.default_env.decorater('map', True)
+@define('map', True)
 def list_map(envs, objs):
     l, r = objs.cdr, []
     while l[0] is not objects.nil:
@@ -112,22 +120,22 @@ def list_map(envs, objs):
         l = map(lambda i: i.cdr, l)
     return objects.to_list(r)
 
-@objects.default_env.decorater('filter', True)
+@define('filter', True)
 def list_filter(envs, objs):
     f = lambda o: objs.car(envs, objects.OPair(o, objects.nil))
     return objects.to_list(filter(f, objs[1]))
 
 # logic functions
-@objects.default_env.decorater('not', True)
+@define('not', True)
 def logic_not(envs, objs): return not objs[0]
 
-@objects.default_env.decorater('and', True)
+@define('and', True)
 def logic_and(envs, objs): return reduce(lambda x, y: x and y, objs)
 
-@objects.default_env.decorater('or', True)
+@define('or', True)
 def logic_or(envs, objs): return reduce(lambda x, y: x or y, objs)
 
-@objects.default_env.decorater('cond', False)
+@define('cond', False)
 def logic_cond(envs, objs):
     elsecase = None
     for o in objs:
@@ -137,58 +145,58 @@ def logic_cond(envs, objs):
         elif envs.eval(o.car): return envs.evals(o.cdr)
     if elsecase: return envs.evals(elsecase)
 
-@objects.default_env.decorater('if', False)
+@define('if', False)
 def logic_if(envs, objs):
     if envs.eval(objs[0]): return envs.eval(objs[1])
     elif objs.cdr.cdr is not objects.nil: return envs.eval(objs[2])
 
 # number functions
-@objects.default_env.decorater('number?', True)
+@define('number?', True)
 def num_number(envs, objs): return isinstance(objs.car, (int, long, float))
 
-@objects.default_env.decorater('+', True)
+@define('+', True)
 def num_add(envs, objs): return sum(objs)
 
-@objects.default_env.decorater('-', True)
+@define('-', True)
 def num_dec(envs, objs):
     s = objs.car
     for o in objs.cdr: s -= o
     return s
 
-@objects.default_env.decorater('*', True)
+@define('*', True)
 def num_mul(envs, objs): return reduce(lambda x, y: x*y, objs)
 
-@objects.default_env.decorater('/', True)
+@define('/', True)
 def num_div(envs, objs):
     s = objs.car
     for o in objs.cdr: s /= o
     return s
 
-@objects.default_env.decorater('=', True)
+@define('=', True)
 def num_eq(envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] == objs[1]
 
-@objects.default_env.decorater('<', True)
+@define('<', True)
 def num_lt(envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] < objs[1]
 
-@objects.default_env.decorater('>', True)
+@define('>', True)
 def num_gt(envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] > objs[1]
 
-@objects.default_env.decorater('>=', True)
+@define('>=', True)
 def num_nlt(envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] >= objs[1]
 
-@objects.default_env.decorater('<=', True)
+@define('<=', True)
 def num_ngt(envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
         isinstance(objs[1], (int, long, float)) and objs[0] <= objs[1]
 
-@objects.default_env.decorater('remainder', True)
+@define('remainder', True)
 def num_remainder(envs, objs):
     return objs[0] % objs[1]

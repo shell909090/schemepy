@@ -12,4 +12,5 @@ if __name__ == '__main__':
     code_tree = parser.split_code_tree(data.decode('utf-8'))
     obj_tree = objects.to_scheme(code_tree)
     run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
-    print objects.default_env.eval(run_objs)
+    env = objects.Envs(symbol.builtin)
+    print env.eval(run_objs)

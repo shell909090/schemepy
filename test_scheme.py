@@ -12,7 +12,8 @@ def run_scheme(filepath):
     code_tree = parser.split_code_tree(data.decode('utf-8'))
     obj_tree = objects.to_scheme(code_tree)
     run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
-    return objects.default_env.eval(run_objs)
+    env = objects.Envs(symbol.builtin)
+    return env.eval(run_objs)
 
 class TestScheme(unittest.TestCase):
 
