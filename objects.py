@@ -18,28 +18,33 @@ class ONil(SchemeObject):
 nil = ONil()
 
 class OPair(SchemeObject):
-    def __init__(self, car = nil, cdr = nil): self.car, self.cdr = car, cdr
+    def __init__(self, car=nil, cdr=nil): self.car, self.cdr = car, cdr
     def __repr__(self):
         if isinstance(self.cdr, OPair):
             return '(%s)' % ' '.join(map(str, self))
         elif self.cdr is nil: return '(%s)' % self.car
         else: return '(%s . %s)' % (self.car, self.cdr)
+    def __getitem__(self, k):
+        p = self
+        while k > 0 and p != nil: p, k = p.cdr, k-1
+        if p == nil: raise IndexError()
+        return p.car
     def __iter__(self):
         p = self
         while p is not nil:
             yield p.car
             p = p.cdr
-    def __getitem__(self, k):
-        p = self
-        while k > 0:
-            p = p.cdr
-            k -= 1
-        return p.car
     def __call__(self, envs):
         func = envs.eval(self.car)
         if not func.evaled: params = self.cdr
         else: params = to_list(map(envs.eval, self.cdr))
         return func(envs, params)
+
+def to_list(li):
+    ''' make python list to scheme list '''
+    p = nil
+    for i in reversed(li): p = OPair(i, p)
+    return p
 
 class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
@@ -78,7 +83,10 @@ def scompile(obj):
     ''' make python objects to scheme objects '''
     if isinstance(obj, (int, long, float)): return obj
     elif isinstance(obj, (list, tuple)):
-        return to_list(map(scompile, obj))
+        l = map(scompile, obj)
+        for i, o in enumerate(l):
+            if isinstance(o, OQuota): o.objs = l.pop(i+1)
+        return to_list(l)
     elif isinstance(obj, (unicode, str)):
         if isinstance(obj, str): obj = obj.decode('utf-8')
         if obj[0] == '#':
@@ -91,17 +99,6 @@ def scompile(obj):
             if '.' in obj: return float(obj)
             else: return int(obj)
         else: return OSymbol(obj)
-
-def to_list(li):
-    ''' make python list to scheme list '''
-    p = nil
-    for i in reversed(li):
-        p = OPair(i, p)
-        if isinstance(p.car, OQuota) and p.car.objs is None:
-            if p.cdr is nil: raise Exception(li)
-            p.car.objs = p.cdr.car
-            p.cdr = p.cdr.cdr
-    return p
 
 class Envs(object):
 
