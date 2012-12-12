@@ -5,15 +5,13 @@
 @author: shell.xu
 '''
 import sys, unittest
-import parser, objects, symbol
+import parser, objects, runtime, symbol
 
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
     code_tree = parser.split_code_tree(data.decode('utf-8'))
-    obj_tree = objects.scompile(code_tree)
-    run_objs = objects.OPair(objects.OSymbol('begin'), obj_tree)
-    env = objects.Envs(symbol.builtin)
-    return env.eval(run_objs)
+    ast = objects.scompile(code_tree)
+    return runtime.run(ast, symbol.builtin)
 
 class TestScheme(unittest.TestCase):
 

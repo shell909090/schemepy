@@ -4,8 +4,9 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
+import runtime
 
-FUNC_DEBUG_NAME, FUNC_DEBUG_END = False, False
+FUNC_DEBUG = False
 
 class OException(Exception): pass
 
@@ -34,11 +35,8 @@ class OPair(SchemeObject):
         while p is not nil:
             yield p.car
             p = p.cdr
-    def __call__(self, envs):
-        func = envs.eval(self.car)
-        if not func.evaled: params = self.cdr
-        else: params = to_list(map(envs.eval, self.cdr))
-        return func(envs, params)
+    def __call__(self, stack, envs, objs):
+        stack.call(runtime.CallFrame(self), envs)
 
 def to_list(li):
     ''' make python list to scheme list '''
@@ -46,10 +44,15 @@ def to_list(li):
     for i in reversed(li): p = OPair(i, p)
     return p
 
+def reversed_list(li):
+    p = nil
+    while li != nil: p, li = OPair(li.car, p), li.cdr
+    return p
+
 class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
     def __repr__(self): return "`" + self.name
-    def __call__(self, envs): return envs[self.name]
+    def __call__(self, stack, envs, objs): return envs[self.name]
 
 class OString(SchemeObject):
     def __init__(self, v): self.str = v[1:-1]
@@ -58,26 +61,28 @@ class OString(SchemeObject):
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
     def __repr__(self): return "'" + str(self.objs)
-    def __call__(self, envs): return self.objs
+    def __call__(self, stack, envs, objs): return self.objs
 
 class OFunction(SchemeObject):
     def __init__(self, name, envs, params, objs):
         self.name, self.envs = name, envs.clone()
         self.params, self.objs, self.evaled = params, objs, True
     def __repr__(self): return '<function %s>' % self.name
-    def __call__(self, envs, objs):
-        with self.envs:
-            if FUNC_DEBUG_NAME: print self.name, objs
-            pn, pv = self.params, objs
-            while pn is not nil and pv is not nil:
-                if pn.car.name == '.':
-                    self.envs.add(pn.cdr.car.name, pv)
-                    break
-                self.envs.add(pn.car.name, pv.car)
-                pn, pv = pn.cdr, pv.cdr
-            r = self.envs.evals(self.objs)
-            if FUNC_DEBUG_END: print self.name + ' end', r
-            return r
+
+    def mkenv(self, objs):
+        newenv = self.envs.clonedown()
+        pn, pv = self.params, objs
+        while pn is not nil and pv is not nil:
+            if pn.car.name == '.':
+                newenv.add(pn.cdr.car.name, pv)
+                break
+            newenv.add(pn.car.name, pv.car)
+            pn, pv = pn.cdr, pv.cdr
+        return newenv
+
+    def __call__(self, stack, envs, objs):
+        if FUNC_DEBUG: print 'call', self.name, self.mkenv(objs).stack[-1]
+        stack.call(runtime.PrognFrame(self.objs), self.mkenv(objs))
 
 def scompile(obj):
     ''' make python objects to scheme objects '''
@@ -99,31 +104,3 @@ def scompile(obj):
             if '.' in obj: return float(obj)
             else: return int(obj)
         else: return OSymbol(obj)
-
-class Envs(object):
-
-    def __init__(self, builtin=None):
-        self.stack = []
-        if builtin: self.stack.append(builtin)
-    def clone(self):
-        sym = Envs()
-        sym.stack = self.stack[:]
-        return sym
-    def __getitem__(self, name):
-        for i in reversed(self.stack):
-            if name in i: return i[name]
-        raise KeyError(name)
-
-    def add(self, name, value): self.stack[-1][name] = value
-    def down(self): self.stack.append({})
-    def up(self): self.stack.pop()
-    def __enter__(self): self.stack.append({})
-    def __exit__(self, tp, value, traceback): self.stack.pop()
-
-    # trampoline化
-    def eval(self, objs):
-        if hasattr(objs, '__call__'): return objs(self)
-        return objs
-    def evals(self, objs):
-        for o in objs: r = self.eval(o)
-        return r
