@@ -34,10 +34,9 @@ def split_code(code):
             yield c
         elif code[idx] == ';':
             idxend = code.find('\n', idx)
-            if idxend == -1:
-                yield code[idx:]
-                break
-            else: yield code[idx:idxend]
+            if idxend == -1: idxend = len(code)
+            yield code[idx:idxend]
+            idx = idxend
         else: yield code[idx]
         start = idx+1
 

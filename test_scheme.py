@@ -5,15 +5,11 @@
 @author: shell.xu
 '''
 import sys, unittest
-import parser, objects, runtime, symbol
+import runtime, symbol
 
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
-    code_tree = parser.split_code_tree(data.decode('utf-8'))
-    stack = runtime.Stack()
-    stack.call(runtime.PrognStatus(objects.scompile(code_tree)),
-               runtime.Envs(builtin=symbol.builtin))
-    return stack.trampoline()
+    return runtime.run(data.decode('utf-8'), symbol.builtin)
 
 class TestScheme(unittest.TestCase):
 
@@ -23,8 +19,8 @@ class TestScheme(unittest.TestCase):
     def test_change_money_list(self):
         self.assertEqual(run_scheme('test/change-money-list.scm'), 9)
 
-    # def test_church(self):
-    #     self.assertEqual(run_scheme('test/church.scm'), 2)
+    def test_church(self):
+        self.assertEqual(run_scheme('test/church.scm'), 2)
 
     def test_last_pair(self):
         self.assertEqual(run_scheme('test/last-pair.scm'), 5)
