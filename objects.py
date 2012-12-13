@@ -36,7 +36,7 @@ class OPair(SchemeObject):
             yield p.car
             p = p.cdr
     def __call__(self, stack, envs, objs):
-        stack.call(runtime.CallFrame(self), envs)
+        stack.call(runtime.CallStatus(self), envs)
 
 def to_list(li):
     ''' make python list to scheme list '''
@@ -82,7 +82,7 @@ class OFunction(SchemeObject):
 
     def __call__(self, stack, envs, objs):
         if FUNC_DEBUG: print 'call', self.name, self.mkenv(objs).stack[-1]
-        stack.call(runtime.PrognFrame(self.objs), self.mkenv(objs))
+        stack.call(runtime.PrognStatus(self.objs), self.mkenv(objs))
 
 def scompile(obj):
     ''' make python objects to scheme objects '''

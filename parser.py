@@ -32,7 +32,15 @@ def split_code(code):
         if code[idx] == '"':
             c, idx = find_quote_end(code, idx)
             yield c
-        elif code[idx] == ';': idx = code.find('\n', idx)
+        elif code[idx] == ';':
+            idxend = code.find('\n', idx)
+            if idxend == -1:
+                print code[idx:]
+                yield code[idx:]
+                break
+            else:
+                print code[idx:idxend]
+                yield code[idx:idxend]
         else: yield code[idx]
         start = idx+1
 
@@ -48,12 +56,11 @@ def build_block(chunks, igcmt, header = None):
     return l
 
 def split_code_tree(code, igcmt=True):
-    return build_block(split_code(code), igcmt)
+    a = split_code(code)
+    return build_block(a, igcmt)
 
 if __name__ == '__main__':
     import sys, pprint
     with open(sys.argv[1], 'r') as f:
         data = f.read().decode('utf-8')
-    code_tree = split_code_tree(data)
-    show_level(code_tree, 0)
-    pprint.pprint(code_tree)
+    pprint.pprint(split_code_tree(data))
