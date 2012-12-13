@@ -1,11 +1,13 @@
+;; 八皇后问题
+;; 传说中的reduce
 (define (accumulate op initial sequence)
-  (if (null? sequence)
-      initial
+  (if (null? sequence) initial
       (op (car sequence)
-	  (accumulate op initial (cdr sequence)))
-      ))
+	  (accumulate op initial (cdr sequence)))))
+;; 平行映射，对seq中的每个元素x，取(proc x)为一个列表。(flatmap proc seq)为所有列表的总和。
 (define (flatmap proc seq)
   (accumulate append '() (map proc seq)))
+;; 生成[a, b]的区间序列
 (define (enumerate-interval a b)
   (if (>= a b)
       (list b)
@@ -48,4 +50,13 @@
        (safe-add? (+ (caar positions) (cdar positions)) positions)
        (safe-dec? (- (caar positions) (cdar positions)) positions))
   )
-(queens 8)
+(display (queens 8))
+(newline)
+;; X O O O O O O O
+;; O O O O X O O O
+;; O O O O O O O X
+;; O O O O O X O O
+;; O O X O O O O O
+;; O O O O O O X O
+;; O X O O O O O O
+;; O O O X O O O O
