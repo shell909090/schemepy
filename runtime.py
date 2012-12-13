@@ -23,6 +23,30 @@ class Envs(object):
             if name in i: return i[name]
         raise KeyError(name)
 
+# class ControlBreak(StandardError):
+#     def __init__(self, 
+
+class Frame(object):
+    def __init__(self, func, envs):
+        self.func, self.envs = func, envs
+        if hasattr(self.func, 'next'):
+            self.next = lambda stack, r: self.func.next(stack, self.envs, r)
+    def __repr__(self): return str(self.func)
+    def __call__(self, stack, r):
+        if not callable(self.func): return self.func
+        return self.func(stack, self.envs, r)
+
+class Stack(list):
+    def call(self, o, env): self.append(Frame(o, env))
+    def trampoline(self):
+        r = None
+        while self:
+            # pprint(self)
+            o = self[-1]
+            if hasattr(o, 'next') and o.next(self, r): r = None
+            else: r = self.pop(-1)(self, r)
+        return r
+
 class PrognStatus(object):
     def __init__(self, objs):
         self.objs, self.rslt = objs, None
@@ -66,23 +90,3 @@ class ParamStatus(object):
         stack.call(self.func, envs)
         return self.params
 
-class Frame(object):
-    def __init__(self, func, envs):
-        self.func, self.envs = func, envs
-        if hasattr(self.func, 'next'):
-            self.next = lambda stack, r: self.func.next(stack, self.envs, r)
-    def __repr__(self): return str(self.func)
-    def __call__(self, stack, r):
-        if not callable(self.func): return self.func
-        return self.func(stack, self.envs, r)
-
-class Stack(list):
-    def call(self, o, env): self.append(Frame(o, env))
-    def trampoline(self):
-        r = None
-        while self:
-            # pprint(self)
-            o = self[-1]
-            if hasattr(o, 'next') and o.next(self, r): r = None
-            else: r = self.pop(-1)(self, r)
-        return r

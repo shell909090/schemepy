@@ -35,12 +35,9 @@ def split_code(code):
         elif code[idx] == ';':
             idxend = code.find('\n', idx)
             if idxend == -1:
-                print code[idx:]
                 yield code[idx:]
                 break
-            else:
-                print code[idx:idxend]
-                yield code[idx:idxend]
+            else: yield code[idx:idxend]
         else: yield code[idx]
         start = idx+1
 
@@ -56,8 +53,7 @@ def build_block(chunks, igcmt, header = None):
     return l
 
 def split_code_tree(code, igcmt=True):
-    a = split_code(code)
-    return build_block(a, igcmt)
+    return build_block(split_code(code), igcmt)
 
 if __name__ == '__main__':
     import sys, pprint
