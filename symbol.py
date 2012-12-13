@@ -48,6 +48,11 @@ def display(stack, envs, objs):
     print ' '.join(map(str, list(objs)))
     return objects.nil
 
+@define('newline', True)
+def display(stack, envs, objs):
+    print
+    return objects.nil
+
 @define('symbol?', True)
 def is_symbol(stack, envs, objs): return isinstance(objs.car, objects.OSymbol)
 
