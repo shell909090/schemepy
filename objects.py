@@ -10,6 +10,10 @@ FUNC_DEBUG = False
 class SchemeObject(object): pass
 
 class ONil(SchemeObject):
+    def __new__(cls, *p, **kw):
+        if not hasattr(cls, 'nil'): cls.nil = object.__new__(cls, *p, **kw)
+        return cls.nil
+    def __setstate__(self, state): return nil
     def __repr__(self): return '()'
     def __iter__(self):
         if False: yield
@@ -25,8 +29,8 @@ class OPair(SchemeObject):
         else: return '(%s . %s)' % (self.car, self.cdr)
     def __getitem__(self, k):
         p = self
-        while k > 0 and p != nil: p, k = p.cdr, k-1
-        if p == nil: raise IndexError()
+        while k > 0 and p is not nil: p, k = p.cdr, k-1
+        if p is nil: raise IndexError()
         return p.car
     def __iter__(self):
         p = self
@@ -43,7 +47,7 @@ def to_list(li):
 
 def reversed_list(li):
     p = nil
-    while li != nil: p, li = OPair(li.car, p), li.cdr
+    while li is not nil: p, li = OPair(li.car, p), li.cdr
     return p
 
 class OSymbol(SchemeObject):
@@ -82,7 +86,6 @@ class OFunction(SchemeObject):
         stack.jump(PrognStatus(self.objs), self.mkenv(objs))
 
 def scompile(obj):
-    ''' make python objects to scheme objects '''
     if isinstance(obj, (int, long, float)): return obj
     elif isinstance(obj, (list, tuple)):
         l = map(scompile, obj)
@@ -130,7 +133,7 @@ class ParamStatus(object):
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.params = OPair(objs, self.params)
-        if self.objs == nil: stack.jump(self.func, envs, self.params)
+        if self.objs is nil: stack.jump(self.func, envs, self.params)
         t, self.objs = self.objs.car, self.objs.cdr
         stack.call(t, envs)
 

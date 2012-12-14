@@ -4,7 +4,7 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import sys, getopt
+import sys, getopt, cPickle
 import parser, objects, symbol
 
 def main():
@@ -18,12 +18,13 @@ def main():
         code = parser.split_code_tree(data.decode('utf-8'))
         __import__('pprint').pprint(code)
         return
-    if '-r' not in optdict: 
-        with open(sys.argv[1], 'r') as f: data = f.read()
+    if '-r' in optdict: 
+        with open(argv[0], 'rb') as fi: code = cPickle.load(fi)
+    else:
+        with open(argv[0], 'r') as f: data = f.read()
         code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    else: code = marshal.load(argv[0])
     if '-s' in optdict:
-        marshal.dump(optdict['-s'])
+        with open(optdict['-s'], 'wb') as fo: cPickle.dump(code, fo, 2)
         return
     stack = objects.Stack()
     stack.append(objects.Frame(objects.PrognStatus(code),

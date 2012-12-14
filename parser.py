@@ -11,7 +11,7 @@ def find_quote_end(code, start):
     while True:
         idx = code.find(u'"', idx+1)
         if code[idx-1] != u'\\':
-            code = code[start+1:idx]
+            code = code[start:idx+1]
             for k, v in replace_tab: code = code.replace(k, v)
             return code, idx
     raise Exception()

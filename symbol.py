@@ -128,7 +128,7 @@ class MapStatus(object):
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.r.append(objs)
-        if self.params[0] == objects.nil: return objects.to_list(self.r)
+        if self.params[0] is objects.nil: return objects.to_list(self.r)
         t = map(lambda i: i.car, self.params)
         self.params = map(lambda i: i.cdr, self.params)
         stack.call(objects.ParamStatus(
@@ -146,7 +146,7 @@ class FilterStatus(object):
         if objs is not None:
             if objs: self.r.append(self.params.car)
             self.params = self.params.cdr
-        if self.params == objects.nil: return objects.to_list(self.r)
+        if self.params is objects.nil: return objects.to_list(self.r)
         stack.call(objects.ParamStatus(
                 self.func, objects.OPair(self.params.car), objects.nil), envs)
 
@@ -171,7 +171,7 @@ class CondStatus(object):
             if objs:
                 stack.jump(self.conds.car[1], envs)
             self.conds = self.conds.cdr
-        if self.conds == objects.nil:
+        if self.conds is objects.nil:
             if self.dft is None: return objects.nil
             stack.jump(self.dft, envs)
         if isinstance(self.conds.car[0], objects.OSymbol) and \
@@ -186,7 +186,7 @@ def logic_cond(stack, envs, objs): stack.jump(CondStatus(objs), envs)
 def logic_if(stack, envs, objs):
     stack.jump(CondStatus(
             objects.OPair(objs),
-            objs[2] if objs.cdr.cdr != objects.nil else None), envs)
+            objs[2] if objs.cdr.cdr is not objects.nil else None), envs)
 
 # number functions
 @define('number?', True)
