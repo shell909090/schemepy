@@ -4,22 +4,19 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import runtime
 
 FUNC_DEBUG = False
-
-class OException(Exception): pass
 
 class SchemeObject(object): pass
 
 class ONil(SchemeObject):
     def __repr__(self): return '()'
-    def __iter__(self):
-        if False: yield 0
+    def __iter__(self): raise StopIteration()
 nil = ONil()
 
 class OPair(SchemeObject):
-    def __init__(self, car=nil, cdr=nil): self.car, self.cdr = car, cdr
+    def __init__(self, car=nil, cdr=nil):
+        self.car, self.cdr = car, cdr
     def __repr__(self):
         if isinstance(self.cdr, OPair):
             return '(%s)' % ' '.join(map(str, self))
@@ -35,7 +32,7 @@ class OPair(SchemeObject):
         while p is not nil:
             yield p.car
             p = p.cdr
-    def __call__(self, stack, envs, objs): stack.jump(runtime.CallStatus(self), envs)
+    def __call__(self, stack, envs, objs): stack.jump(CallStatus(self), envs)
 
 def to_list(li):
     ''' make python list to scheme list '''
@@ -81,7 +78,7 @@ class OFunction(SchemeObject):
 
     def __call__(self, stack, envs, objs):
         if FUNC_DEBUG: print 'call', self.name, self.mkenv(objs).stack[-1]
-        stack.jump(runtime.PrognStatus(self.objs), self.mkenv(objs))
+        stack.jump(PrognStatus(self.objs), self.mkenv(objs))
 
 def scompile(obj):
     ''' make python objects to scheme objects '''
@@ -103,3 +100,89 @@ def scompile(obj):
             if '.' in obj: return float(obj)
             else: return int(obj)
         else: return OSymbol(obj)
+
+class PrognStatus(object):
+    def __init__(self, objs):
+        self.objs, self.rslt = objs, None
+    def __repr__(self): return 'progn ' + str(self.objs)
+
+    def __call__(self, stack, envs, objs):
+        if self.objs.cdr == nil: stack.jump(self.objs.car, envs)
+        t, self.objs = self.objs.car, self.objs.cdr
+        stack.call(t, envs)
+
+class CallStatus(object):
+    def __init__(self, objs): self.objs = objs
+    def __repr__(self): return 'call ' + str(self.objs)
+
+    def __call__(self, stack, envs, objs):
+        if objs is None: stack.call(self.objs[0], envs)
+        if not objs.evaled:
+            stack.jump(ParamStatus(objs, self.objs.cdr, nil), envs)
+        stack.jump(ParamStatus(objs, nil, reversed_list(self.objs.cdr)), envs)
+
+class ParamStatus(object):
+    def __init__(self, func, params, objs):
+        self.func, self.params, self.objs = func, params, objs
+    def __repr__(self):
+        return 'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
+
+    def __call__(self, stack, envs, objs):
+        if objs is not None: self.params = OPair(objs, self.params)
+        if self.objs == nil: stack.jump(self.func, envs, self.params)
+        t, self.objs = self.objs.car, self.objs.cdr
+        stack.call(t, envs)
+
+# class Envs(object):
+#     def __init__(self, stack=None, builtin=None):
+#         if stack is not None: self.stack = stack
+#         else:
+#             self.stack = []
+#             if builtin: self.stack.append(builtin)
+#     def clone(self): return Envs(stack=self.stack[:])
+#     def clonedown(self): return Envs(self.stack[:] + [{},])
+#     def add(self, name, value): self.stack[-1][name] = value
+#     def __getitem__(self, name):
+#         for i in reversed(self.stack):
+#             if name in i: return i[name]
+#         raise KeyError(name)
+
+class Envs(OPair):
+    def __init__(self, stack=None, builtin=None):
+        if stack is not None: self.stack = stack
+        elif builtin is not None: self.stack = OPair(builtin)
+        else: self.stack = nil
+    def clone(self): return Envs(stack=self.stack)
+    def clonedown(self): return Envs(OPair({}, self.stack))
+    def add(self, name, value): self.stack.car[name] = value
+    def __getitem__(self, name):
+        for i in self.stack:
+            if name in i: return i[name]
+        raise KeyError(name)
+
+class ControlBreak(StandardError): pass
+
+class Frame(object):
+    def __init__(self, func, envs): self.func, self.envs = func, envs
+    def __repr__(self): return str(self.func)
+    def __call__(self, stack, r):
+        if not callable(self.func): return self.func
+        return self.func(stack, self.envs, r)
+
+from pprint import pprint
+class Stack(list):
+    def call(self, func, envs, args=None):
+        self.append(Frame(func, envs))
+        raise ControlBreak(args)
+    def jump(self, func, envs, args=None):
+        self[-1] = Frame(func, envs)
+        raise ControlBreak(args)
+    def trampoline(self, r=None):
+        while self:
+            # print 'result:', r
+            # pprint(self)
+            try:
+                r = self[-1](self, r)
+                self.pop(-1)
+            except ControlBreak, cb: r = cb.args[0]
+        return r

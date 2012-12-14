@@ -1,11 +1,16 @@
 #!/usr/bin/make -f
 CC=gcc
+CFLAGS=$(shell python-config --includes) $(shell python-config --libs)
 
 all: build
 
 clean:
-	rm -f *.o *.pyc
+	rm -f *.o *.so *.pyc
 
-build: parser
+build: objects.so
 
-parser: parser.o
+%.so: %.c
+	$(CC) $(CFLAGS) -shared -o $@ $^
+
+%.c: %.py
+	cython -o $@ $^

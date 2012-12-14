@@ -4,7 +4,7 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import objects, runtime
+import objects
 
 builtin={}
 def define(name, evaled=None):
@@ -40,7 +40,7 @@ def sym_lambda(stack, envs, objs):
 
 @define('progn', False)
 def progn(stack, envs, objs):
-    stack.jump(runtime.PrognStatus(objs), envs.clonedown())
+    stack.jump(objects.PrognStatus(objs), envs.clonedown())
 
 @define('display', True)
 @define('error', True)
@@ -73,7 +73,7 @@ class LetStatus(object):
             self.envs.add(self.syms.car[0].name, objs)
             self.syms = self.syms.cdr
         if self.syms is objects.nil:
-            stack.jump(runtime.PrognStatus(self.func), self.envs)
+            stack.jump(objects.PrognStatus(self.func), self.envs)
         stack.call(self.syms.car[1], self.envs if self.ast else envs)
 
 @define('let', False)
@@ -131,7 +131,7 @@ class MapStatus(object):
         if self.params[0] == objects.nil: return objects.to_list(self.r)
         t = map(lambda i: i.car, self.params)
         self.params = map(lambda i: i.cdr, self.params)
-        stack.call(runtime.ParamStatus(
+        stack.call(objects.ParamStatus(
                 self.func, objects.to_list(t), objects.nil), envs)
 
 @define('map', True)
@@ -147,7 +147,7 @@ class FilterStatus(object):
             if objs: self.r.append(self.params.car)
             self.params = self.params.cdr
         if self.params == objects.nil: return objects.to_list(self.r)
-        stack.call(runtime.ParamStatus(
+        stack.call(objects.ParamStatus(
                 self.func, objects.OPair(self.params.car), objects.nil), envs)
 
 @define('filter', True)
