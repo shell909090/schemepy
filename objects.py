@@ -11,7 +11,8 @@ class SchemeObject(object): pass
 
 class ONil(SchemeObject):
     def __repr__(self): return '()'
-    def __iter__(self): raise StopIteration()
+    def __iter__(self):
+        if False: yield
 nil = ONil()
 
 class OPair(SchemeObject):

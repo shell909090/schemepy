@@ -53,9 +53,3 @@ def build_block(chunks, igcmt, header = None):
 
 def split_code_tree(code, igcmt=True):
     return build_block(split_code(code), igcmt)
-
-if __name__ == '__main__':
-    import sys, pprint
-    with open(sys.argv[1], 'r') as f:
-        data = f.read().decode('utf-8')
-    pprint.pprint(split_code_tree(data))

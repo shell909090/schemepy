@@ -7,10 +7,10 @@ all: build
 clean:
 	rm -f *.o *.so *.pyc
 
-build: objects.so
+build: parser.so
 
 %.so: %.c
 	$(CC) $(CFLAGS) -shared -o $@ $^
 
-%.c: %.py
+%.c: %.pyx
 	cython -o $@ $^
