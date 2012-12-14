@@ -151,16 +151,16 @@ class ParamStatus(object):
 #             if name in i: return i[name]
 #         raise KeyError(name)
 
-class Envs(OPair):
-    def __init__(self, stack=None, builtin=None):
-        if stack is not None: self.stack = stack
-        elif builtin is not None: self.stack = OPair(builtin)
-        else: self.stack = nil
-    def clone(self): return Envs(stack=self.stack)
-    def clonedown(self): return Envs(OPair({}, self.stack))
-    def add(self, name, value): self.stack.car[name] = value
+class Envs(object):
+    def __init__(self, e=None, builtin=None):
+        if e is not None: self.e = e
+        elif builtin is not None: self.e = OPair(builtin)
+        else: self.e = nil
+    def clone(self): return Envs(e=self.e)
+    def clonedown(self): return Envs(OPair({}, self.e))
+    def add(self, name, value): self.e.car[name] = value
     def __getitem__(self, name):
-        for i in self.stack:
+        for i in self.e:
             if name in i: return i[name]
         raise KeyError(name)
 
@@ -173,18 +173,28 @@ class Frame(object):
         if not callable(self.func): return self.func
         return self.func(stack, self.envs, r)
 
-from pprint import pprint
 class Stack(list):
+
+    def save(self, f):
+        self[0].envs.e.car = {}
+        __import__('cPickle').dump(self, f, 2)
+    @classmethod
+    def load(cls, f, builtin):
+        stack = __import__('cPickle').load(f)
+        stack[0].envs.e.car.update(builtin)
+        return stack
+
     def call(self, func, envs, args=None):
         self.append(Frame(func, envs))
         raise ControlBreak(args)
     def jump(self, func, envs, args=None):
         self[-1] = Frame(func, envs)
         raise ControlBreak(args)
+
     def trampoline(self, r=None):
         while self:
             # print 'result:', r
-            # pprint(self)
+            # __import__('pprint').pprint(self)
             try:
                 r = self[-1](self, r)
                 self.pop(-1)
