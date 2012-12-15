@@ -5,10 +5,10 @@
 @author: shell.xu
 '''
 import sys, getopt, cPickle
-import parser, objects, symbol
+import parser, objects, symbol, debug
 
 def main():
-    optlist, argv = getopt.getopt(sys.argv[1:], 'hprs:')
+    optlist, argv = getopt.getopt(sys.argv[1:], 'dhprs:t')
     optdict = dict(optlist)
     if '-h' in optdict:
         print main.__doc__
@@ -26,9 +26,8 @@ def main():
     if '-s' in optdict:
         with open(optdict['-s'], 'wb') as fo: cPickle.dump(code, fo, 2)
         return
-    stack = objects.Stack()
-    stack.append((objects.PrognStatus(code),
-                  objects.Envs.init(symbol.builtin)))
-    print stack.trampoline()
+    stack = objects.Stack.init(code, symbol.builtin)
+    dbg = debug.Debuger() if '-d' in optdict else None
+    print stack.trampoline(debug=dbg)
 
 if __name__ == '__main__': main()

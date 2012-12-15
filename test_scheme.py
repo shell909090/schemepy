@@ -10,9 +10,7 @@ import parser, objects, symbol
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
     code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = objects.Stack()
-    stack.append((objects.PrognStatus(code),
-                  objects.Envs.init(symbol.builtin)))
+    stack = objects.Stack.init(code, symbol.builtin)
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):

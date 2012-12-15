@@ -59,17 +59,12 @@ class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
     def __repr__(self): return "`" + self.name
 
-# class OString(SchemeObject):
-#     def __init__(self, v): self.str = v[1:-1]
-#     def __repr__(self): return '"%s"' % self.str
-
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
     def __repr__(self): return "'" + str(self.objs)
 
 class OFunction(SchemeObject):
     def __init__(self, name, envs, params, objs):
-        # self.name, self.envs = name, envs.clone()
         self.name, self.envs = name, envs
         self.params, self.objs, self.evaled = params, objs, True
     def __repr__(self): return '<function %s>' % self.name
@@ -99,7 +94,6 @@ def scompile(obj):
             if obj[1] == 't': return True
             elif obj[1] == 'f': return False
             else: raise Exception('boolean name error')
-        # elif obj[0] == '"': return OString(obj)
         elif obj[0] == '"': return obj[1:-1]
         elif obj[0] == "'": return OQuota()
         elif obj[0].isdigit() or (\
@@ -145,8 +139,6 @@ class Envs(object):
     def __init__(self, e=None, regenfast=False):
         self.e, self.fast = e, {}
         for i in reversed_list(self.e): self.fast.update(i)
-    @classmethod
-    def init(self, builtin): return Envs(to_list([{}, builtin,]))
     # TODO: regen fast?
     # in func, we need regen, otherwise don't
     def fork(self, r=None):
@@ -158,15 +150,20 @@ class Envs(object):
     def __getitem__(self, name): return self.fast[name]
 
 class Stack(list):
+    @classmethod
+    def init(cls, code, builtin):
+        stack = cls()
+        stack.append((PrognStatus(code), Envs(to_list([{}, builtin,]))))
+        return stack
 
-    def save(self, f):
+    def save(self, r, f):
         self[0].envs.e.car = {}
-        __import__('cPickle').dump(self, f, 2)
+        __import__('cPickle').dump((self, r), f, 2)
     @classmethod
     def load(cls, f, builtin):
-        stack = __import__('cPickle').load(f)
+        stack, r = __import__('cPickle').load(f)
         stack[0].envs.e.car.update(builtin)
-        return stack
+        return stack, r
 
     def call(self, func, envs, args=None):
         if isinstance(func, OSymbol): return (envs[func.name],)
@@ -186,10 +183,9 @@ class Stack(list):
         else: self[-1] = (func, envs)
         return (args,)
 
-    def trampoline(self, r=None):
+    def trampoline(self, r=None, debug=None):
         while self:
-            # print 'result:', r
-            # __import__('pprint').pprint([i[0] for i in self])
+            if debug is not None: debug(self, r)
             o = self[-1]
             r = o[0](self, o[1], r)
             if isinstance(r, tuple): r = r[0]
