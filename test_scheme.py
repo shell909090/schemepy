@@ -12,7 +12,7 @@ def run_scheme(filepath):
     code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
     stack = objects.Stack()
     stack.append((objects.PrognStatus(code),
-                  objects.Envs(builtin=symbol.builtin)))
+                  objects.Envs.init(symbol.builtin)))
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):

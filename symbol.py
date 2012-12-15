@@ -27,8 +27,8 @@ class DefineStatus(object):
 @define('define', False)
 def sym_define(stack, envs, objs):
     if isinstance(objs[0], objects.OPair):
-        envs.add(objs[0].car.name,
-                 objects.OFunction(objs.car.car.name, envs, objs.car.cdr, objs.cdr))
+        envs.add(objs[0][0].name,
+                 objects.OFunction(objs[0][0].name, envs, objs[0].cdr, objs.cdr))
         return objects.nil
     elif isinstance(objs[0], objects.OSymbol):
         return stack.jump(DefineStatus(objs[0].name, objs[1]), envs)
@@ -40,7 +40,7 @@ def sym_lambda(stack, envs, objs):
 
 @define('progn', False)
 def progn(stack, envs, objs):
-    return stack.jump(objects.PrognStatus(objs), envs.clonedown())
+    return stack.jump(objects.PrognStatus(objs), envs)
 
 @define('display', True)
 @define('error', True)
@@ -54,7 +54,7 @@ def display(stack, envs, objs):
     return objects.nil
 
 @define('symbol?', True)
-def is_symbol(stack, envs, objs): return isinstance(objs.car, objects.OSymbol)
+def is_symbol(stack, envs, objs): return isinstance(objs[0], objects.OSymbol)
 
 @define('eq?', True)
 def is_eq(stack, envs, objs):
@@ -64,56 +64,56 @@ def is_eq(stack, envs, objs):
 
 class LetStatus(object):
     def __init__(self, func, syms, envs, ast):
-        self.func, self.syms, self.envs, self.ast = func, syms, envs.clonedown(), ast
+        self.func, self.syms, self.envs, self.ast = func, syms, envs.fork(), ast
     def __repr__(self): return 'let ' + str(self.func)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
-            assert(isinstance(self.syms.car[0], objects.OSymbol))
-            self.envs.add(self.syms.car[0].name, objs)
+            assert(isinstance(self.syms[0][0], objects.OSymbol))
+            self.envs.add(self.syms[0][0].name, objs)
             self.syms = self.syms.cdr
         if self.syms is objects.nil:
             return stack.jump(objects.PrognStatus(self.func), self.envs)
-        return stack.call(self.syms.car[1], self.envs if self.ast else envs)
+        return stack.call(self.syms[0][1], self.envs if self.ast else envs)
 
 @define('let', False)
 def sym_let(stack, envs, objs):
-    return stack.jump(LetStatus(objs.cdr, objs.car, envs, False), envs)
+    return stack.jump(LetStatus(objs.cdr, objs[0], envs, False), envs)
 
 @define('let*', False)
 def sym_letA(stack, envs, objs):
-    return stack.jump(LetStatus(objs.cdr, objs.car, envs, True), envs)
+    return stack.jump(LetStatus(objs.cdr, objs[0], envs, True), envs)
 
 # list functions
 @define('list', True)
 def list_list(stack, envs, objs): return objs
 
 @define('null?', True)
-def list_null(stack, envs, objs): return objs.car is objects.nil
+def list_null(stack, envs, objs): return objs[0] is objects.nil
 
 @define('pair?', True)
-def list_pair(stack, envs, objs): return isinstance(objs.car, objects.OPair)
+def list_pair(stack, envs, objs): return isinstance(objs[0], objects.OPair)
 
 @define('cons', True)
 def list_cons(stack, envs, objs): return objects.OPair(objs[0], objs[1])
 
 @define('car', True)
-def list_car(stack, envs, objs): return objs.car.car
+def list_car(stack, envs, objs): return objs[0].car
 
 @define('cdr', True)
-def list_cdr(stack, envs, objs): return objs.car.cdr
+def list_cdr(stack, envs, objs): return objs[0].cdr
 
 @define('caar', True)
-def list_caar(stack, envs, objs): return objs.car.car.car
+def list_caar(stack, envs, objs): return objs[0].car.car
 
 @define('cadr', True)
-def list_cadr(stack, envs, objs): return objs.car.cdr.car
+def list_cadr(stack, envs, objs): return objs[0].cdr.car
 
 @define('cdar', True)
-def list_cdar(stack, envs, objs): return objs.car.car.cdr
+def list_cdar(stack, envs, objs): return objs[0].car.cdr
 
 @define('caddr', True)
-def list_caddr(stack, envs, objs): return objs.car.cdr.cdr.car
+def list_caddr(stack, envs, objs): return objs[0].cdr.cdr.car
 
 @define('append', True)
 def list_append(stack, envs, objs):
@@ -171,35 +171,33 @@ class CondStatus(object):
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
-            if objs: return stack.jump(self.conds.car[1], envs)
+            if objs: return stack.jump(self.conds[0][1], envs)
             self.conds = self.conds.cdr
         if self.conds is objects.nil:
             if self.dft is None: return objects.nil
             return stack.jump(self.dft, envs)
-        if isinstance(self.conds.car[0], objects.OSymbol) and \
-                self.conds.car[0].name == u'else':
-            return stack.jump(self.conds.car[1], envs)
-        return stack.call(self.conds.car[0], envs)
+        if isinstance(self.conds[0][0], objects.OSymbol) and \
+                self.conds[0][0].name == u'else':
+            return stack.jump(self.conds[0][1], envs)
+        return stack.call(self.conds[0][0], envs)
 
 @define('cond', False)
 def logic_cond(stack, envs, objs): return stack.jump(CondStatus(objs), envs)
 
 @define('if', False)
 def logic_if(stack, envs, objs):
-    return stack.jump(CondStatus(
-            objects.OPair(objs),
-            objs[2] if objs.cdr.cdr is not objects.nil else None), envs)
+    return stack.jump(CondStatus(objects.OPair(objs), objs.get(2)), envs)
 
 # number functions
 @define('number?', True)
-def num_number(stack, envs, objs): return isinstance(objs.car, (int, long, float))
+def num_number(stack, envs, objs): return isinstance(objs[0], (int, long, float))
 
 @define('+', True)
 def num_add(stack, envs, objs): return sum(objs)
 
 @define('-', True)
 def num_dec(stack, envs, objs):
-    s = objs.car
+    s = objs[0]
     for o in objs.cdr: s -= o
     return s
 
@@ -208,7 +206,7 @@ def num_mul(stack, envs, objs): return reduce(lambda x, y: x*y, objs)
 
 @define('/', True)
 def num_div(stack, envs, objs):
-    s = objs.car
+    s = objs[0]
     for o in objs.cdr: s /= o
     return s
 

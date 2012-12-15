@@ -27,6 +27,10 @@ class OPair(SchemeObject):
             return '(%s)' % ' '.join(map(str, self))
         elif self.cdr is nil: return '(%s)' % self.car
         else: return '(%s . %s)' % (self.car, self.cdr)
+    def get(self, k, d=None):
+        p = self
+        while k > 0 and p is not nil: p, k = p.cdr, k-1
+        return d if p is nil else p.car
     def __getitem__(self, k):
         p = self
         while k > 0 and p is not nil: p, k = p.cdr, k-1
@@ -55,9 +59,9 @@ class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
     def __repr__(self): return "`" + self.name
 
-class OString(SchemeObject):
-    def __init__(self, v): self.str = v[1:-1]
-    def __repr__(self): return '"%s"' % self.str
+# class OString(SchemeObject):
+#     def __init__(self, v): self.str = v[1:-1]
+#     def __repr__(self): return '"%s"' % self.str
 
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
@@ -65,19 +69,20 @@ class OQuota(SchemeObject):
 
 class OFunction(SchemeObject):
     def __init__(self, name, envs, params, objs):
-        self.name, self.envs = name, envs.clone()
+        # self.name, self.envs = name, envs.clone()
+        self.name, self.envs = name, envs
         self.params, self.objs, self.evaled = params, objs, True
     def __repr__(self): return '<function %s>' % self.name
 
     def __call__(self, stack, envs, objs):
-        newenv = self.envs.clonedown()
-        pn, pv = self.params, objs
+        r, pn, pv = {}, self.params, objs
         while pn is not nil and pv is not nil:
             if pn[0].name == '.':
-                newenv.add(pn.cdr.car.name, pv)
+                r[pn[1].name] = pv
                 break
-            newenv.add(pn.car.name, pv.car)
+            r[pn[0].name] = pv[0]
             pn, pv = pn.cdr, pv.cdr
+        newenv = self.envs.fork(r)
         if FUNC_DEBUG: print 'call', self.name, newenv.stack[-1]
         return stack.jump(PrognStatus(self.objs), newenv)
 
@@ -94,11 +99,13 @@ def scompile(obj):
             if obj[1] == 't': return True
             elif obj[1] == 'f': return False
             else: raise Exception('boolean name error')
-        elif obj[0] == '"': return OString(obj)
+        # elif obj[0] == '"': return OString(obj)
+        elif obj[0] == '"': return obj[1:-1]
         elif obj[0] == "'": return OQuota()
-        elif obj[0].isdigit():
+        elif obj[0].isdigit() or (\
+            obj[0] == '-' and len(obj) > 1 and obj[1].isdigit()):
             if '.' in obj: return float(obj)
-            else: return int(obj)
+            return int(obj)
         else: return OSymbol(obj)
 
 class PrognStatus(object):
@@ -134,32 +141,21 @@ class ParamStatus(object):
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
 
-# class Envs(object):
-#     def __init__(self, stack=None, builtin=None):
-#         if stack is not None: self.stack = stack
-#         else:
-#             self.stack = []
-#             if builtin: self.stack.append(builtin)
-#     def clone(self): return Envs(stack=self.stack[:])
-#     def clonedown(self): return Envs(self.stack[:] + [{},])
-#     def add(self, name, value): self.stack[-1][name] = value
-#     def __getitem__(self, name):
-#         for i in reversed(self.stack):
-#             if name in i: return i[name]
-#         raise KeyError(name)
-
 class Envs(object):
-    def __init__(self, e=None, builtin=None):
-        if e is not None: self.e = e
-        elif builtin is not None: self.e = OPair(builtin)
-        else: self.e = nil
-    def clone(self): return Envs(e=self.e)
-    def clonedown(self): return Envs(OPair({}, self.e))
-    def add(self, name, value): self.e.car[name] = value
-    def __getitem__(self, name):
-        for i in self.e:
-            if name in i: return i[name]
-        raise KeyError(name)
+    def __init__(self, e=None, regenfast=False):
+        self.e, self.fast = e, {}
+        for i in reversed_list(self.e): self.fast.update(i)
+    @classmethod
+    def init(self, builtin): return Envs(to_list([{}, builtin,]))
+    # TODO: regen fast?
+    # in func, we need regen, otherwise don't
+    def fork(self, r=None):
+        if r is None: r = {}
+        return Envs(OPair(r, self.e))
+    def add(self, name, value):
+        if self.fast: self.fast[name] = value
+        self.e.car[name] = value
+    def __getitem__(self, name): return self.fast[name]
 
 class Stack(list):
 

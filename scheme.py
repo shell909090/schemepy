@@ -28,7 +28,7 @@ def main():
         return
     stack = objects.Stack()
     stack.append((objects.PrognStatus(code),
-                  objects.Envs(builtin=symbol.builtin)))
+                  objects.Envs.init(symbol.builtin)))
     print stack.trampoline()
 
 if __name__ == '__main__': main()
