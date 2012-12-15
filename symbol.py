@@ -20,7 +20,7 @@ class DefineStatus(object):
     def __repr__(self): return 'define %s' % self.name
 
     def __call__(self, stack, envs, objs):
-        if objs is None: stack.call(self.objs, envs)
+        if objs is None: return stack.call(self.objs, envs)
         else: envs.add(self.name, objs)
         return objects.nil
 
@@ -31,7 +31,7 @@ def sym_define(stack, envs, objs):
                  objects.OFunction(objs.car.car.name, envs, objs.car.cdr, objs.cdr))
         return objects.nil
     elif isinstance(objs[0], objects.OSymbol):
-        stack.jump(DefineStatus(objs[0].name, objs[1]), envs)
+        return stack.jump(DefineStatus(objs[0].name, objs[1]), envs)
     raise Exception('define format error')
 
 @define('lambda', False)
@@ -40,7 +40,7 @@ def sym_lambda(stack, envs, objs):
 
 @define('progn', False)
 def progn(stack, envs, objs):
-    stack.jump(objects.PrognStatus(objs), envs.clonedown())
+    return stack.jump(objects.PrognStatus(objs), envs.clonedown())
 
 @define('display', True)
 @define('error', True)
@@ -73,16 +73,16 @@ class LetStatus(object):
             self.envs.add(self.syms.car[0].name, objs)
             self.syms = self.syms.cdr
         if self.syms is objects.nil:
-            stack.jump(objects.PrognStatus(self.func), self.envs)
-        stack.call(self.syms.car[1], self.envs if self.ast else envs)
+            return stack.jump(objects.PrognStatus(self.func), self.envs)
+        return stack.call(self.syms.car[1], self.envs if self.ast else envs)
 
 @define('let', False)
 def sym_let(stack, envs, objs):
-    stack.jump(LetStatus(objs.cdr, objs.car, envs, False), envs)
+    return stack.jump(LetStatus(objs.cdr, objs.car, envs, False), envs)
 
 @define('let*', False)
 def sym_letA(stack, envs, objs):
-    stack.jump(LetStatus(objs.cdr, objs.car, envs, True), envs)
+    return stack.jump(LetStatus(objs.cdr, objs.car, envs, True), envs)
 
 # list functions
 @define('list', True)
@@ -131,11 +131,12 @@ class MapStatus(object):
         if self.params[0] is objects.nil: return objects.to_list(self.r)
         t = map(lambda i: i.car, self.params)
         self.params = map(lambda i: i.cdr, self.params)
-        stack.call(objects.ParamStatus(
+        return stack.call(objects.ParamStatus(
                 self.func, objects.to_list(t), objects.nil), envs)
 
 @define('map', True)
-def list_map(stack, envs, objs): stack.jump(MapStatus(objs.car, objs.cdr), envs)
+def list_map(stack, envs, objs):
+    return stack.jump(MapStatus(objs.car, objs.cdr), envs)
 
 class FilterStatus(object):
     def __init__(self, func, params):
@@ -147,11 +148,12 @@ class FilterStatus(object):
             if objs: self.r.append(self.params.car)
             self.params = self.params.cdr
         if self.params is objects.nil: return objects.to_list(self.r)
-        stack.call(objects.ParamStatus(
+        return stack.call(objects.ParamStatus(
                 self.func, objects.OPair(self.params.car), objects.nil), envs)
 
 @define('filter', True)
-def list_filter(stack, envs, objs): stack.jump(FilterStatus(objs[0], objs[1]), envs)
+def list_filter(stack, envs, objs):
+    return stack.jump(FilterStatus(objs[0], objs[1]), envs)
 
 # logic functions
 @define('not', True)
@@ -165,26 +167,26 @@ def logic_or(stack, envs, objs): return reduce(lambda x, y: x or y, objs)
 
 class CondStatus(object):
     def __init__(self, conds, dft=None): self.conds, self.dft = conds, dft
+    def __repr__(self): return 'cond %s' % self.conds[0]
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
-            if objs:
-                stack.jump(self.conds.car[1], envs)
+            if objs: return stack.jump(self.conds.car[1], envs)
             self.conds = self.conds.cdr
         if self.conds is objects.nil:
             if self.dft is None: return objects.nil
-            stack.jump(self.dft, envs)
+            return stack.jump(self.dft, envs)
         if isinstance(self.conds.car[0], objects.OSymbol) and \
                 self.conds.car[0].name == u'else':
-            stack.jump(self.conds.car[1], envs)
-        stack.call(self.conds.car[0], envs)
+            return stack.jump(self.conds.car[1], envs)
+        return stack.call(self.conds.car[0], envs)
 
 @define('cond', False)
-def logic_cond(stack, envs, objs): stack.jump(CondStatus(objs), envs)
+def logic_cond(stack, envs, objs): return stack.jump(CondStatus(objs), envs)
 
 @define('if', False)
 def logic_if(stack, envs, objs):
-    stack.jump(CondStatus(
+    return stack.jump(CondStatus(
             objects.OPair(objs),
             objs[2] if objs.cdr.cdr is not objects.nil else None), envs)
 

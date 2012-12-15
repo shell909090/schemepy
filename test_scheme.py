@@ -11,8 +11,8 @@ def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
     code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
     stack = objects.Stack()
-    stack.append(objects.Frame(objects.PrognStatus(code),
-                               objects.Envs(builtin=symbol.builtin)))
+    stack.append((objects.PrognStatus(code),
+                  objects.Envs(builtin=symbol.builtin)))
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):

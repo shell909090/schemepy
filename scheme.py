@@ -27,8 +27,8 @@ def main():
         with open(optdict['-s'], 'wb') as fo: cPickle.dump(code, fo, 2)
         return
     stack = objects.Stack()
-    stack.append(objects.Frame(objects.PrognStatus(code),
-                               objects.Envs(builtin=symbol.builtin)))
+    stack.append((objects.PrognStatus(code),
+                  objects.Envs(builtin=symbol.builtin)))
     print stack.trampoline()
 
 if __name__ == '__main__': main()
