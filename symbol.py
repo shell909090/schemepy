@@ -21,7 +21,7 @@ class DefineStatus(object):
 
     def __call__(self, stack, envs, objs):
         if objs is None: return stack.call(self.objs, envs)
-        else: envs.add(self.name, objs)
+        envs.add(self.name, objs)
         return objects.nil
 
 @define('define', False)

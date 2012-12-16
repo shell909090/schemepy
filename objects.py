@@ -103,8 +103,7 @@ def scompile(obj):
         else: return OSymbol(obj)
 
 class PrognStatus(object):
-    def __init__(self, objs):
-        self.objs, self.rslt = objs, None
+    def __init__(self, objs): self.objs, self.rslt = objs, None
     def __repr__(self): return 'progn ' + str(self.objs)
 
     def __call__(self, stack, envs, objs):
@@ -136,9 +135,10 @@ class ParamStatus(object):
         return stack.call(t, envs)
 
 class Envs(object):
-    def __init__(self, e=None, regenfast=False):
+    def __init__(self, e=None, regenfast=True):
         self.e, self.fast = e, {}
         for i in reversed_list(self.e): self.fast.update(i)
+    # FIXME: getstate/setstate, otherwise save/load will not work
     # TODO: regen fast?
     # in func, we need regen, otherwise don't
     def fork(self, r=None):
@@ -165,12 +165,19 @@ class Stack(list):
         stack[0].envs.e.car.update(builtin)
         return stack, r
 
+    def func_call(self, func, envs):
+        o = func[0]
+        if not isinstance(o, OSymbol): return CallStatus(func)
+        objs = envs[o.name]
+        if not objs.evaled: return ParamStatus(objs, func.cdr, nil)
+        return ParamStatus(objs, nil, reversed_list(func.cdr))
+
     def call(self, func, envs, args=None):
         if isinstance(func, OSymbol): return (envs[func.name],)
         if isinstance(func, OQuota): return (func.objs,)
         if not callable(func): return (func,)
         if isinstance(func, OPair):
-            self.append((CallStatus(func), envs))
+            self.append((self.func_call(func, envs), envs))
         else: self.append((func, envs))
         return (args,)
 
@@ -179,7 +186,7 @@ class Stack(list):
         if isinstance(func, OQuota): return (func.objs, self.pop(-1))
         if not callable(func): return (func, self.pop(-1))
         if isinstance(func, OPair):
-            self[-1] = (CallStatus(func), envs)
+            self[-1] = (self.func_call(func, envs), envs)
         else: self[-1] = (func, envs)
         return (args,)
 
