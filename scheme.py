@@ -6,28 +6,41 @@
 '''
 import sys, getopt, cPickle
 import parser, objects, symbol, debug
+from os import path
+
+def print_src(filename):
+    with open(filename, 'r') as f: data = f.read()
+    code = parser.split_code_tree(data.decode('utf-8'))
+    __import__('pprint').pprint(code)
+
+def compile_src(filename):
+    with open(filename, 'r') as f: data = f.read()
+    code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
+    with open(path.splitext(filename)[0]+'.scc', 'wb') as fo:
+        cPickle.dump(code, fo, 2)
+
+def indent_src(filename, stream):
+    with open(filename, 'r') as f: data = f.read()
+    code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
+    for i in code: stream.write(objects.format(i)+'\n')
 
 def main():
-    optlist, argv = getopt.getopt(sys.argv[1:], 'dhprs:t')
+    optlist, argv = getopt.getopt(sys.argv[1:], 'cdhiprt')
     optdict = dict(optlist)
     if '-h' in optdict:
         print main.__doc__
         return
-    if '-p' in optdict:
-        with open(argv[0], 'r') as f: data = f.read()
-        code = parser.split_code_tree(data.decode('utf-8'))
-        __import__('pprint').pprint(code)
-        return
-    if '-r' in optdict: 
+    if '-c' in optdict: return compile_src(argv[0])
+    if '-p' in optdict: return print_src(argv[0])
+    if '-i' in optdict: return indent_src(argv[0], sys.stdout)
+
+    if path.splitext(argv[0])[1] == '.scc':
         with open(argv[0], 'rb') as fi: code = cPickle.load(fi)
     else:
         with open(argv[0], 'r') as f: data = f.read()
         code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    if '-s' in optdict:
-        with open(optdict['-s'], 'wb') as fo: cPickle.dump(code, fo, 2)
-        return
     stack = objects.Stack.init(code, symbol.builtin)
     dbg = debug.Debuger() if '-d' in optdict else None
-    print stack.trampoline(debug=dbg)
+    print objects.format(stack.trampoline(debug=dbg))
 
 if __name__ == '__main__': main()

@@ -65,7 +65,7 @@ def is_eq(stack, envs, objs):
 class LetStatus(object):
     def __init__(self, func, syms, envs, ast):
         self.func, self.syms, self.envs, self.ast = func, syms, envs.fork(), ast
-    def __repr__(self): return 'let ' + str(self.func)
+    def __repr__(self): return 'let ' + objects.format(self.func)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -124,7 +124,8 @@ def list_append(stack, envs, objs):
 class MapStatus(object):
     def __init__(self, func, params):
         self.func, self.params, self.r = func, params, []
-    def __repr__(self): return 'map %s -> (%s)' % (str(self.func), str(self.params))
+    def __repr__(self): return 'map %s -> (%s)' % (
+        objects.format(self.func), objects.format(self.params))
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.r.append(objs)
@@ -141,7 +142,8 @@ def list_map(stack, envs, objs):
 class FilterStatus(object):
     def __init__(self, func, params):
         self.func, self.params, self.r = func, params, []
-    def __repr__(self): return 'filter %s -> (%s)' % (str(self.func), str(self.params))
+    def __repr__(self): return 'filter %s -> (%s)' % (
+        objects.format(self.func), objects.format(self.params))
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -167,7 +169,7 @@ def logic_or(stack, envs, objs): return reduce(lambda x, y: x or y, objs)
 
 class CondStatus(object):
     def __init__(self, conds, dft=None): self.conds, self.dft = conds, dft
-    def __repr__(self): return 'cond %s' % self.conds[0]
+    def __repr__(self): return 'cond %s' % objects.format(self.conds[0])
 
     def __call__(self, stack, envs, objs):
         if objs is not None:

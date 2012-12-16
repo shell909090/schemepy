@@ -6,6 +6,7 @@
 '''
 
 FUNC_DEBUG = False
+FORMAT_WIDTH=60
 
 class SchemeObject(object): pass
 
@@ -14,7 +15,6 @@ class ONil(SchemeObject):
         if not hasattr(cls, 'nil'): cls.nil = object.__new__(cls, *p, **kw)
         return cls.nil
     def __setstate__(self, state): return nil
-    def __repr__(self): return '()'
     def __iter__(self):
         if False: yield
 nil = ONil()
@@ -22,11 +22,6 @@ nil = ONil()
 class OPair(SchemeObject):
     def __init__(self, car=nil, cdr=nil):
         self.car, self.cdr = car, cdr
-    def __repr__(self):
-        if isinstance(self.cdr, OPair):
-            return '(%s)' % ' '.join(map(str, self))
-        elif self.cdr is nil: return '(%s)' % self.car
-        else: return '(%s . %s)' % (self.car, self.cdr)
     def get(self, k, d=None):
         p = self
         while k > 0 and p is not nil: p, k = p.cdr, k-1
@@ -57,11 +52,9 @@ def reversed_list(li):
 
 class OSymbol(SchemeObject):
     def __init__(self, name): self.name = name
-    def __repr__(self): return "`" + self.name
 
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
-    def __repr__(self): return "'" + str(self.objs)
 
 class OFunction(SchemeObject):
     def __init__(self, name, envs, params, objs):
@@ -102,9 +95,36 @@ def scompile(obj):
             return int(obj)
         else: return OSymbol(obj)
 
+def format_list(o, lv=0):
+    if o.cdr is nil: return '(%s)' % format(o.car)
+    elif not isinstance(o.cdr, OPair):
+        return '(%s . %s)' % (format(o.car), format(o.cdr))
+    if isinstance(o[0], OSymbol) and o[0].name == 'define':
+        s = '(%s %s\n' % (format(o[0], lv), format(o[1], lv))
+        for i in o.cdr.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
+        return s[:-1]
+    s = '(%s)' % ' '.join(map(lambda o: format(o, lv), o))
+    if (2*lv + len(s)) < FORMAT_WIDTH: return s
+    s = '(%s\n' % format(o[0], lv)
+    for i in o.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
+    return s[:-1]
+
+def format(o, lv=0):
+    if o is None: return 'nil'
+    return {
+        int: str, long: str, float: str,
+        bool: lambda o: '#t' if o else '#f',
+        basestring: lambda o: '"%s"' % str(o),
+        ONil: lambda o: '()',
+        OSymbol: lambda o: o.name,
+        OQuota: lambda o: "'" + format(o.objs),
+        OPair: lambda o: format_list(o, lv),
+        OFunction: lambda o: '<function %s>' % o.name
+        }[o.__class__](o)
+
 class PrognStatus(object):
     def __init__(self, objs): self.objs, self.rslt = objs, None
-    def __repr__(self): return 'progn ' + str(self.objs)
+    def __repr__(self): return 'progn ' + format(self.objs)
 
     def __call__(self, stack, envs, objs):
         if self.objs.cdr == nil: return stack.jump(self.objs.car, envs)
@@ -113,7 +133,7 @@ class PrognStatus(object):
 
 class CallStatus(object):
     def __init__(self, objs): self.objs = objs
-    def __repr__(self): return 'call ' + str(self.objs)
+    def __repr__(self): return 'call ' + format(self.objs)
 
     def __call__(self, stack, envs, objs):
         if objs is None: return stack.call(self.objs[0], envs)
@@ -126,7 +146,8 @@ class ParamStatus(object):
     def __init__(self, func, params, objs):
         self.func, self.params, self.objs = func, params, objs
     def __repr__(self):
-        return 'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
+        return 'call %s with (%s) <- (%s)' % (
+            self.func, format(self.params), format(self.objs))
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.params = OPair(objs, self.params)
