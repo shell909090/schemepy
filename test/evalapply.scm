@@ -2,3 +2,4 @@
 (define (test-eval n)
   (eval '(+ n n) (current-environment)))
 (display (test-eval 10))
+(display (apply test-eval '(15)))

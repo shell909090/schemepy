@@ -54,15 +54,13 @@ def sym_eval(stack, envs, objs):
 
 @define('apply', True)
 def sym_apply(stack, envs, objs):
-    pass
+    return stack.jump(objects.ParamStatus(objs[0], objs[1], objects.nil), envs)
 
 @define('user-init-environment', True)
-def user_init_env(stack, envs, objs):
-    return stack[0][1]
+def user_init_env(stack, envs, objs): return stack[0][1]
 
 @define('current-environment', True)
-def cur_env(stack, envs, objs):
-    return stack[-1][1]
+def cur_env(stack, envs, objs): return stack[-1][1]
 
 @define('import', True)
 def sym_import(stack, envs, objs):
