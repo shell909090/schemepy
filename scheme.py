@@ -41,6 +41,8 @@ def main():
         code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
     stack = objects.Stack.init(code, symbol.builtin)
     dbg = debug.Debuger() if '-d' in optdict else None
-    print objects.format(stack.trampoline(debug=dbg))
+    print objects.format(stack.trampoline(
+            debug=dbg))
+            # , coredump=path.splitext(argv[0])[0]+'.cdp'))
 
 if __name__ == '__main__': main()

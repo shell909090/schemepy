@@ -38,29 +38,37 @@ def sym_define(stack, envs, objs):
 def sym_lambda(stack, envs, objs):
     return objects.OFunction('<lambda>', envs, objs.car, objs.cdr)
 
-@define('progn', False)
-def progn(stack, envs, objs):
+@define('begin', False)
+def sym_begin(stack, envs, objs):
     return stack.jump(objects.PrognStatus(objs), envs)
 
-@define('display', True)
-@define('error', True)
-def display(stack, envs, objs):
-    print ' '.join(map(str, list(objs)))
-    return objects.nil
+@define('compile', True)
+def sym_compile(stack, envs, objs):
+    return objects.scompile(parser.split_code_tree(objs[0]))
 
-@define('newline', True)
-def display(stack, envs, objs):
-    print
-    return objects.nil
+@define('eval', True)
+def sym_eval(stack, envs, objs):
+    env = objs.get(1)
+    if env is None: env = envs
+    return stack.jump(objs[0], env)
 
-@define('symbol?', True)
-def is_symbol(stack, envs, objs): return isinstance(objs[0], objects.OSymbol)
+@define('apply', True)
+def sym_apply(stack, envs, objs):
+    pass
 
-@define('eq?', True)
-def is_eq(stack, envs, objs):
-    if isinstance(objs[0], objects.OSymbol) and isinstance(objs[1], objects.OSymbol):
-        return objs[0].name == objs[1].name
-    else: return objs[0] is objs[1]
+@define('user-init-environment', True)
+def user_init_env(stack, envs, objs):
+    return stack[0][1]
+
+@define('current-environment', True)
+def cur_env(stack, envs, objs):
+    return stack[-1][1]
+
+@define('import', True)
+def sym_import(stack, envs, objs):
+    mod = __import__(objs[0])
+    env.fast.update(mod.builtin)
+    env.e.car.update(mod.builtin)
 
 class LetStatus(object):
     def __init__(self, func, syms, envs, ast):
@@ -83,6 +91,15 @@ def sym_let(stack, envs, objs):
 @define('let*', False)
 def sym_letA(stack, envs, objs):
     return stack.jump(LetStatus(objs.cdr, objs[0], envs, True), envs)
+
+@define('symbol?', True)
+def is_symbol(stack, envs, objs): return isinstance(objs[0], objects.OSymbol)
+
+@define('eq?', True)
+def is_eq(stack, envs, objs):
+    if isinstance(objs[0], objects.OSymbol) and isinstance(objs[1], objects.OSymbol):
+        return objs[0].name == objs[1].name
+    else: return objs[0] is objs[1]
 
 # list functions
 @define('list', True)
@@ -240,3 +257,15 @@ def num_ngt(stack, envs, objs):
 @define('remainder', True)
 def num_remainder(stack, envs, objs):
     return objs[0] % objs[1]
+
+# other functions
+@define('display', True)
+@define('error', True)
+def display(stack, envs, objs):
+    print ' '.join(map(objects.format, list(objs)))
+    return objects.nil
+
+@define('newline', True)
+def display(stack, envs, objs):
+    print
+    return objects.nil

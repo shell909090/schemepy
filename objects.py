@@ -107,20 +107,19 @@ def format_list(o, lv=0):
     if (2*lv + len(s)) < FORMAT_WIDTH: return s
     s = '(%s\n' % format(o[0], lv)
     for i in o.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
-    return s[:-1]
+    return s[:-1]+')'
 
 def format(o, lv=0):
-    if o is None: return 'nil'
     return {
-        int: str, long: str, float: str,
         bool: lambda o: '#t' if o else '#f',
         basestring: lambda o: '"%s"' % str(o),
         ONil: lambda o: '()',
         OSymbol: lambda o: o.name,
         OQuota: lambda o: "'" + format(o.objs),
         OPair: lambda o: format_list(o, lv),
-        OFunction: lambda o: '<function %s>' % o.name
-        }[o.__class__](o)
+        OFunction: lambda o: '<function %s>' % o.name,
+        Envs: lambda o: format_list(o.e, lv),
+        }.get(o.__class__, str)(o)
 
 class PrognStatus(object):
     def __init__(self, objs): self.objs, self.rslt = objs, None
@@ -166,7 +165,7 @@ class Envs(object):
         if r is None: r = {}
         return Envs(OPair(r, self.e))
     def add(self, name, value):
-        if self.fast: self.fast[name] = value
+        self.fast[name] = value
         self.e.car[name] = value
     def __getitem__(self, name): return self.fast[name]
 
@@ -211,11 +210,18 @@ class Stack(list):
         else: self[-1] = (func, envs)
         return (args,)
 
-    def trampoline(self, r=None, debug=None):
-        while self:
-            if debug is not None: debug(self, r)
-            o = self[-1]
-            r = o[0](self, o[1], r)
-            if isinstance(r, tuple): r = r[0]
-            else: self.pop(-1)
-        return r
+    def trampoline(self, r=None, debug=None, coredump=None):
+        try:
+            while self:
+                if debug is not None: debug(self, r)
+                o = self[-1]
+                r = o[0](self, o[1], r)
+                if isinstance(r, tuple): r = r[0]
+                else: self.pop(-1)
+            return r
+        except Exception, err:
+            if coredump:
+                if isinstance(coredump, basestring):
+                    with open(coredump, 'wb') as cd: self.save(r, cd)
+                else: self.save(r, coredump)
+            raise
