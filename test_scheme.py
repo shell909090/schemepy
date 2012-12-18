@@ -43,7 +43,7 @@ class TestScheme(unittest.TestCase):
         self.assertEqual(list(run_scheme('test/same-partiy.scm')), [3, 5, 7])
 
     def test_subset(self):
-        subset = str(run_scheme('test/subset.scm'))
+        subset = objects.format(run_scheme('test/subset.scm'))
         self.assertEqual(subset,
                          '(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))')
 

@@ -36,8 +36,6 @@ class OPair(SchemeObject):
         while p is not nil:
             yield p.car
             p = p.cdr
-    def __call__(self, stack, envs, objs):
-        raise Exception('this should never happen')
 
 def to_list(li):
     ''' make python list to scheme list '''
@@ -155,12 +153,10 @@ class ParamStatus(object):
         return stack.call(t, envs)
 
 class Envs(object):
-    def __init__(self, e=None, regenfast=True):
+    def __init__(self, e=None):
         self.e, self.fast = e, {}
         for i in reversed_list(self.e): self.fast.update(i)
     # FIXME: getstate/setstate, otherwise save/load will not work
-    # TODO: regen fast?
-    # in func, we need regen, otherwise don't
     def fork(self, r=None):
         if r is None: r = {}
         return Envs(OPair(r, self.e))
@@ -195,18 +191,18 @@ class Stack(list):
     def call(self, func, envs, args=None):
         if isinstance(func, OSymbol): return (envs[func.name],)
         if isinstance(func, OQuota): return (func.objs,)
-        if not callable(func): return (func,)
         if isinstance(func, OPair):
             self.append((self.func_call(func, envs), envs))
+        elif not callable(func): return (func,)
         else: self.append((func, envs))
         return (args,)
 
     def jump(self, func, envs, args=None):
         if isinstance(func, OSymbol): return (envs[func.name], self.pop(-1))
         if isinstance(func, OQuota): return (func.objs, self.pop(-1))
-        if not callable(func): return (func, self.pop(-1))
         if isinstance(func, OPair):
             self[-1] = (self.func_call(func, envs), envs)
+        elif not callable(func): return (func, self.pop(-1))
         else: self[-1] = (func, envs)
         return (args,)
 

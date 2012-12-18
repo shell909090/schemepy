@@ -1,4 +1,6 @@
 parser
+*~
 *.pyc
 *.pyo
-*~
+*.scc
+*.cdp
