@@ -9,8 +9,8 @@ import pprint
 import objects
 
 def print_step(stack, r):
-    print 'result:', objects.format(r)
-    for i in stack: print objects.format(i[0])
+    print 'result:', r
+    for i in stack: print i[0]
 
 # TODO: breakpoint, cond breakpoint, clear, exec
 class Debuger(cmd.Cmd):
@@ -28,23 +28,23 @@ class Debuger(cmd.Cmd):
 
     def do_stack(self, line):
         ''' print full stack '''
-        for i in self.stack: print objects.format(i[0])
+        for i in self.stack: print i[0]
     def do_result(self, line):
         ''' print step result '''
-        print 'result:', objects.format(self.r)
+        print 'result:', self.r
 
     def do_all(self, line):
         ''' print all variable '''
         for k, v in self.stack[-1][1].fast.iteritems():
-            print k, objects.format(v)
+            print k, v
     def do_var(self, line):
         ''' print variables in this environment '''
         for k, v in self.stack[-1][1].e[0].iteritems():
-            print k, objects.format(v)
+            print k, v
     do_v = do_var
     def do_print(self, line):
         ''' print value of a name '''
-        print objects.format(self.stack[-1][1][line.strip()])
+        print self.stack[-1][1][line.strip()]
     # TODO: auto-complete?
     do_p = do_print
 
@@ -83,6 +83,6 @@ class Debuger(cmd.Cmd):
                 not (self.next and len(stack) == self.next): return
         self.prompt = '%d > ' % len(stack)
         self.stack, self.r = stack, r
-        print 'result:', objects.format(self.r)
+        print 'result:', self.r
         print stack[-1][0]
         self.cmdloop()

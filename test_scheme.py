@@ -5,12 +5,12 @@
 @author: shell.xu
 '''
 import sys, unittest
-import parser, objects, symbol
+import parser, interrupter, symbol
 
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
-    code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = objects.Stack.init(code, symbol.builtin)
+    code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
+    stack = interrupter.Stack.init(code, symbol.builtin)
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestScheme(unittest.TestCase):
         self.assertEqual(list(run_scheme('test/same-partiy.scm')), [3, 5, 7])
 
     def test_subset(self):
-        subset = objects.format(run_scheme('test/subset.scm'))
+        subset = str(run_scheme('test/subset.scm'))
         self.assertEqual(subset,
                          '(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))')
 

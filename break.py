@@ -5,7 +5,7 @@
 @author: shell.xu
 '''
 import os, sys, cPickle
-import parser, objects, symbol
+import parser, objects, interrupter, symbol
 from os import path
 
 src = '''
@@ -31,13 +31,12 @@ def main():
     r = None
     if path.exists(sys.argv[1]):
         with open(sys.argv[1], 'rb') as fi:
-            stack, r = objects.Stack.load(fi, symbol.builtin)
+            stack, r = interrupter.Stack.load(fi, symbol.builtin)
         r = ResumeInfo(r)
     else:
-        code = objects.scompile(parser.split_code_tree(src))
-        stack = objects.Stack.init(code, symbol.builtin)
-    try: print stack.trampoline(r)
-    except BreakException, be:
-        with open(sys.argv[1], 'wb') as fo: stack.save(fo, be.args[0])
+        code = interrupter.scompile(parser.split_code_tree(src))
+        stack = interrupter.Stack.init(code, symbol.builtin)
+    try: print stack.trampoline(r, coredump=sys.argv[1])
+    except BreakException, be: pass
 
 if __name__ == '__main__': main()

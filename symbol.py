@@ -4,7 +4,7 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import objects
+import objects, interrupter
 
 builtin={}
 def define(name, evaled=None):
@@ -26,9 +26,11 @@ class DefineStatus(object):
 
 @define('define', False)
 def sym_define(stack, envs, objs):
-    if isinstance(objs[0], objects.OPair):
+    # FIXME:
+    if isinstance(objs[0], objects.OCons):
         envs.add(objs[0][0].name,
-                 objects.OFunction(objs[0][0].name, envs, objs[0].cdr, objs.cdr))
+                 interrupter.OFunction(objs[0][0].name, envs,
+                                       objs[0].cdr, objs.cdr))
         return objects.nil
     elif isinstance(objs[0], objects.OSymbol):
         return stack.jump(DefineStatus(objs[0].name, objs[1]), envs)
@@ -36,15 +38,16 @@ def sym_define(stack, envs, objs):
 
 @define('lambda', False)
 def sym_lambda(stack, envs, objs):
-    return objects.OFunction('<lambda>', envs, objs.car, objs.cdr)
+    # FIXME:
+    return interrupter.OFunction('<lambda>', envs, objs.car, objs.cdr)
 
 @define('begin', False)
 def sym_begin(stack, envs, objs):
-    return stack.jump(objects.PrognStatus(objs), envs)
+    return stack.jump(interrupter.PrognStatus(objs), envs)
 
 @define('compile', True)
 def sym_compile(stack, envs, objs):
-    return objects.scompile(parser.split_code_tree(objs[0]))
+    return interrupter.scompile(parser.split_code_tree(objs[0]))
 
 @define('eval', True)
 def sym_eval(stack, envs, objs):
@@ -54,7 +57,8 @@ def sym_eval(stack, envs, objs):
 
 @define('apply', True)
 def sym_apply(stack, envs, objs):
-    return stack.jump(objects.ParamStatus(objs[0], objs[1], objects.nil), envs)
+    return stack.jump(interrupter.ParamStatus(
+            objs[0], objs[1], objects.nil), envs)
 
 @define('user-init-environment', True)
 def user_init_env(stack, envs, objs): return stack[0][1]
@@ -71,7 +75,7 @@ def sym_import(stack, envs, objs):
 class LetStatus(object):
     def __init__(self, func, syms, envs, ast):
         self.func, self.syms, self.envs, self.ast = func, syms, envs.fork(), ast
-    def __repr__(self): return 'let ' + objects.format(self.func)
+    def __repr__(self): return 'let ' + str(self.func)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -79,7 +83,7 @@ class LetStatus(object):
             self.envs.add(self.syms[0][0].name, objs)
             self.syms = self.syms.cdr
         if self.syms is objects.nil:
-            return stack.jump(objects.PrognStatus(self.func), self.envs)
+            return stack.jump(interrupter.PrognStatus(self.func), self.envs)
         return stack.call(self.syms[0][1], self.envs if self.ast else envs)
 
 @define('let', False)
@@ -107,10 +111,10 @@ def list_list(stack, envs, objs): return objs
 def list_null(stack, envs, objs): return objs[0] is objects.nil
 
 @define('pair?', True)
-def list_pair(stack, envs, objs): return isinstance(objs[0], objects.OPair)
+def list_pair(stack, envs, objs): return isinstance(objs[0], objects.OCons)
 
 @define('cons', True)
-def list_cons(stack, envs, objs): return objects.OPair(objs[0], objs[1])
+def list_cons(stack, envs, objs): return objects.OCons(objs[0], objs[1])
 
 @define('car', True)
 def list_car(stack, envs, objs): return objs[0].car
@@ -139,15 +143,14 @@ def list_append(stack, envs, objs):
 class MapStatus(object):
     def __init__(self, func, params):
         self.func, self.params, self.r = func, params, []
-    def __repr__(self): return 'map %s -> (%s)' % (
-        objects.format(self.func), objects.format(self.params))
+    def __repr__(self): return 'map %s -> (%s)' % (self.func, self.params)
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.r.append(objs)
         if self.params[0] is objects.nil: return objects.to_list(self.r)
         t = map(lambda i: i.car, self.params)
         self.params = map(lambda i: i.cdr, self.params)
-        return stack.call(objects.ParamStatus(
+        return stack.call(interrupter.ParamStatus(
                 self.func, objects.to_list(t), objects.nil), envs)
 
 @define('map', True)
@@ -157,16 +160,15 @@ def list_map(stack, envs, objs):
 class FilterStatus(object):
     def __init__(self, func, params):
         self.func, self.params, self.r = func, params, []
-    def __repr__(self): return 'filter %s -> (%s)' % (
-        objects.format(self.func), objects.format(self.params))
+    def __repr__(self): return 'filter %s -> (%s)' % (self.func, self.params)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
             if objs: self.r.append(self.params.car)
             self.params = self.params.cdr
         if self.params is objects.nil: return objects.to_list(self.r)
-        return stack.call(objects.ParamStatus(
-                self.func, objects.OPair(self.params.car), objects.nil), envs)
+        return stack.call(interrupter.ParamStatus(
+                self.func, objects.OCons(self.params.car), objects.nil), envs)
 
 @define('filter', True)
 def list_filter(stack, envs, objs):
@@ -184,7 +186,7 @@ def logic_or(stack, envs, objs): return reduce(lambda x, y: x or y, objs)
 
 class CondStatus(object):
     def __init__(self, conds, dft=None): self.conds, self.dft = conds, dft
-    def __repr__(self): return 'cond %s' % objects.format(self.conds[0])
+    def __repr__(self): return 'cond %s' % self.conds[0]
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -203,7 +205,7 @@ def logic_cond(stack, envs, objs): return stack.jump(CondStatus(objs), envs)
 
 @define('if', False)
 def logic_if(stack, envs, objs):
-    return stack.jump(CondStatus(objects.OPair(objs), objs.get(2)), envs)
+    return stack.jump(CondStatus(objects.OCons(objs), objs.get(2)), envs)
 
 # number functions
 @define('number?', True)
@@ -260,7 +262,7 @@ def num_remainder(stack, envs, objs):
 @define('display', True)
 @define('error', True)
 def display(stack, envs, objs):
-    print ' '.join(map(objects.format, list(objs)))
+    print ' '.join(map(str, list(objs)))
     return objects.nil
 
 @define('newline', True)

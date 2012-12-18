@@ -5,7 +5,7 @@
 @author: shell.xu
 '''
 import sys, getopt, cPickle
-import parser, objects, symbol, debug
+import parser, interrupter, symbol, debug
 from os import path
 
 def print_src(filename):
@@ -15,14 +15,14 @@ def print_src(filename):
 
 def compile_src(filename):
     with open(filename, 'r') as f: data = f.read()
-    code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
+    code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
     with open(path.splitext(filename)[0]+'.scc', 'wb') as fo:
         cPickle.dump(code, fo, 2)
 
 def indent_src(filename, stream):
     with open(filename, 'r') as f: data = f.read()
-    code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    for i in code: stream.write(objects.format(i)+'\n')
+    code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
+    for i in code: stream.write(str(i)+'\n')
 
 def main():
     optlist, argv = getopt.getopt(sys.argv[1:], 'cdhiprt')
@@ -38,11 +38,10 @@ def main():
         with open(argv[0], 'rb') as fi: code = cPickle.load(fi)
     else:
         with open(argv[0], 'r') as f: data = f.read()
-        code = objects.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = objects.Stack.init(code, symbol.builtin)
+        code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
+    stack = interrupter.Stack.init(code, symbol.builtin)
     dbg = debug.Debuger() if '-d' in optdict else None
-    print objects.format(stack.trampoline(
-            debug=dbg))
-            # , coredump=path.splitext(argv[0])[0]+'.cdp'))
+    print stack.trampoline(
+        debug=dbg, coredump=path.splitext(argv[0])[0]+'.cdp')
 
 if __name__ == '__main__': main()
