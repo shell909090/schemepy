@@ -10,7 +10,7 @@ import parser, interrupter, symbol
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
     code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = interrupter.Stack.init(code, symbol.builtin)
+    stack = interrupter.init(code, symbol.builtin)
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):

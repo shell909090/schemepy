@@ -34,8 +34,8 @@ def main():
             stack, r = interrupter.Stack.load(fi, symbol.builtin)
         r = ResumeInfo(r)
     else:
-        code = interrupter.scompile(parser.split_code_tree(src))
-        stack = interrupter.Stack.init(code, symbol.builtin)
+        code = objects.scompile(parser.split_code_tree(src))
+        stack = interrupter.init(code, symbol.builtin)
     try: print stack.trampoline(r, coredump=sys.argv[1])
     except BreakException, be: pass
 

@@ -8,6 +8,24 @@ from objects import *
 
 all = ['Stack',]
 
+class OFunction(SchemeObject):
+    def __init__(self, name, envs, params, objs):
+        self.name, self.envs = name, envs
+        self.params, self.objs, self.evaled = params, objs, True
+    def __repr__(self): return '<function %s>' % self.name
+
+    def __call__(self, stack, envs, objs):
+        r, pn, pv = {}, self.params, objs
+        while pn is not nil and pv is not nil:
+            if pn[0].name == '.':
+                r[pn[1].name] = pv
+                break
+            r[pn[0].name] = pv[0]
+            pn, pv = pn.cdr, pv.cdr
+        newenv = self.envs.fork(r)
+        if FUNC_DEBUG: print 'call', self.name, newenv.stack[-1]
+        return stack.jump(PrognStatus(self.objs), newenv)
+
 class PrognStatus(object):
     def __init__(self, objs): self.objs, self.rslt = objs, None
     def __repr__(self): return 'progn ' + str(self.objs)
@@ -17,24 +35,22 @@ class PrognStatus(object):
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
 
-class CallStatus(object):
+class FuncStatus(object):
     def __init__(self, objs): self.objs = objs
-    def __repr__(self): return 'call ' + str(self.objs)
+    def __repr__(self): return str(self.objs)
 
     def __call__(self, stack, envs, objs):
         if objs is None: return stack.call(self.objs[0], envs)
         if not objs.evaled:
-            return stack.jump(ParamStatus(objs, self.objs.cdr, nil), envs)
-        return stack.jump(ParamStatus(objs, nil,
-                                      reversed_list(self.objs.cdr)), envs)
+            return stack.jump(CallStatus(objs, self.objs.cdr, nil), envs)
+        return stack.jump(CallStatus(objs, nil,
+                                     reversed_list(self.objs.cdr)), envs)
 
-# TODO: this should be call status
-class ParamStatus(object):
+class CallStatus(object):
     def __init__(self, func, params, objs):
         self.func, self.params, self.objs = func, params, objs
     def __repr__(self):
-        return 'call %s with (%s) <- (%s)' % (
-            self.func, self.params, self.objs)
+        return 'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.params = OCons(objs, self.params)
@@ -46,7 +62,6 @@ class Envs(object):
     def __init__(self, e=None):
         self.e, self.fast = e, {}
         self.genfast()
-    # FIXME: getstate/setstate, otherwise save/load will not work
     def __getstate__(self): return self.e
     def __setstate__(self, state): self.e, self.fast = state, {}
     def __repr__(self): return objects.format_list(self.e)
@@ -61,11 +76,6 @@ class Envs(object):
     def __getitem__(self, name): return self.fast[name]
 
 class Stack(list):
-    @classmethod
-    def init(cls, code, builtin):
-        stack = cls()
-        stack.append((PrognStatus(code), Envs(to_list([{}, builtin,]))))
-        return stack
 
     def save(self, r, f):
         self[0][1].e[1].clear()
@@ -79,10 +89,10 @@ class Stack(list):
 
     def func_call(self, func, envs):
         o = func[0]
-        if not isinstance(o, OSymbol): return CallStatus(func)
+        if not isinstance(o, OSymbol): return FuncStatus(func)
         objs = envs[o.name]
-        if not objs.evaled: return ParamStatus(objs, func.cdr, nil)
-        return ParamStatus(objs, nil, reversed_list(func.cdr))
+        if not objs.evaled: return CallStatus(objs, func.cdr, nil)
+        return CallStatus(objs, nil, reversed_list(func.cdr))
 
     def call(self, func, envs, args=None):
         if isinstance(func, OSymbol): return (envs[func.name],)
@@ -117,3 +127,8 @@ class Stack(list):
                     with open(coredump, 'wb') as cd: self.save(r, cd)
                 else: self.save(r, coredump)
             raise
+
+def init(code, builtin):
+    stack = Stack()
+    stack.append((PrognStatus(code), Envs(to_list([{}, builtin,]))))
+    return stack

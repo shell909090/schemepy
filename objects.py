@@ -4,10 +4,13 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import interrupter
 
 FUNC_DEBUG = False
 FORMAT_WIDTH=60
+
+all = ['ONil', 'nil', 'OCons', 'to_list', 'reversed_list',
+       'OSymbol', 'OQuota', 'OFunction',
+       'scompile', 'format_list', 'format']
 
 class SchemeObject(object):
     def __repr__(self): return format(self)
@@ -56,25 +59,6 @@ class OSymbol(SchemeObject):
 class OQuota(SchemeObject):
     def __init__(self): self.objs = None
 
-class OFunction(SchemeObject):
-    def __init__(self, name, envs, params, objs):
-        self.name, self.envs = name, envs
-        self.params, self.objs, self.evaled = params, objs, True
-    def __repr__(self): return '<function %s>' % self.name
-
-    # move this call to ParamStatus
-    def __call__(self, stack, envs, objs):
-        r, pn, pv = {}, self.params, objs
-        while pn is not nil and pv is not nil:
-            if pn[0].name == '.':
-                r[pn[1].name] = pv
-                break
-            r[pn[0].name] = pv[0]
-            pn, pv = pn.cdr, pv.cdr
-        newenv = self.envs.fork(r)
-        if FUNC_DEBUG: print 'call', self.name, newenv.stack[-1]
-        return stack.jump(interrupter.PrognStatus(self.objs), newenv)
-
 def scompile(obj):
     if isinstance(obj, (int, long, float)): return obj
     elif isinstance(obj, (list, tuple)):
@@ -118,5 +102,4 @@ def format(o, lv=0):
         OSymbol: lambda o: o.name,
         OQuota: lambda o: "'" + format(o.objs),
         OCons: lambda o: format_list(o, lv),
-        OFunction: lambda o: '<function %s>' % o.name,
         }.get(o.__class__, str)(o)

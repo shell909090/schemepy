@@ -57,7 +57,7 @@ def sym_eval(stack, envs, objs):
 
 @define('apply', True)
 def sym_apply(stack, envs, objs):
-    return stack.jump(interrupter.ParamStatus(
+    return stack.jump(interrupter.CallStatus(
             objs[0], objs[1], objects.nil), envs)
 
 @define('user-init-environment', True)
@@ -150,7 +150,7 @@ class MapStatus(object):
         if self.params[0] is objects.nil: return objects.to_list(self.r)
         t = map(lambda i: i.car, self.params)
         self.params = map(lambda i: i.cdr, self.params)
-        return stack.call(interrupter.ParamStatus(
+        return stack.call(interrupter.CallStatus(
                 self.func, objects.to_list(t), objects.nil), envs)
 
 @define('map', True)
@@ -167,7 +167,7 @@ class FilterStatus(object):
             if objs: self.r.append(self.params.car)
             self.params = self.params.cdr
         if self.params is objects.nil: return objects.to_list(self.r)
-        return stack.call(interrupter.ParamStatus(
+        return stack.call(interrupter.CallStatus(
                 self.func, objects.OCons(self.params.car), objects.nil), envs)
 
 @define('filter', True)

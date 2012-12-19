@@ -39,7 +39,7 @@ def main():
     else:
         with open(argv[0], 'r') as f: data = f.read()
         code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = interrupter.Stack.init(code, symbol.builtin)
+    stack = interrupter.init(code, symbol.builtin)
     dbg = debug.Debuger() if '-d' in optdict else None
     print stack.trampoline(
         debug=dbg, coredump=path.splitext(argv[0])[0]+'.cdp')
