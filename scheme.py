@@ -4,8 +4,8 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-import sys, getopt, cPickle
-import parser, interrupter, symbol, debug
+import sys, cmd, getopt, cPickle
+import parser, objects, interrupter, symbol, debug
 from os import path
 
 def print_src(filename):
@@ -24,6 +24,25 @@ def indent_src(filename, stream):
     code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
     for i in code: stream.write(str(i)+'\n')
 
+class REPL(cmd.Cmd):
+
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.prompt = '> '
+        self.env = interrupter.Envs(objects.to_list([{}, symbol.builtin,]))
+
+    def do_quit(self, line):
+        ''' quit system '''
+        print 'quit'
+        sys.exit(-1)
+    do_EOF = do_quit
+
+    def default(self, line):
+        code = interrupter.scompile(parser.split_code_tree(line))
+        stack = interrupter.Stack()
+        stack.append((interrupter.PrognStatus(code), self.env))
+        print stack.trampoline()
+
 def main():
     optlist, argv = getopt.getopt(sys.argv[1:], 'cdhiprt')
     optdict = dict(optlist)
@@ -33,6 +52,8 @@ def main():
     if '-c' in optdict: return compile_src(argv[0])
     if '-p' in optdict: return print_src(argv[0])
     if '-i' in optdict: return indent_src(argv[0], sys.stdout)
+
+    if len(argv) == 0: return REPL().cmdloop()
 
     if path.splitext(argv[0])[1] == '.scc':
         with open(argv[0], 'rb') as fi: code = cPickle.load(fi)

@@ -8,7 +8,7 @@ from objects import *
 
 all = ['Stack',]
 
-class OFunction(SchemeObject):
+class OFunction(object):
     def __init__(self, name, envs, params, objs):
         self.name, self.envs = name, envs
         self.params, self.objs, self.evaled = params, objs, True
