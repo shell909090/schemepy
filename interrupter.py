@@ -4,6 +4,7 @@
 @date: 2012-12-18
 @author: shell.xu
 '''
+from collections import deque
 from objects import *
 
 all = ['Stack',]
@@ -75,7 +76,7 @@ class Envs(object):
         self.e.car[name] = value
     def __getitem__(self, name): return self.fast[name]
 
-class Stack(list):
+class Stack(deque):
 
     def save(self, r, f):
         self[0][1].e[1].clear()
@@ -104,11 +105,11 @@ class Stack(list):
         return (args,)
 
     def jump(self, func, envs, args=None):
-        if isinstance(func, OSymbol): return (envs[func.name], self.pop(-1))
-        if isinstance(func, OQuota): return (func.objs, self.pop(-1))
+        if isinstance(func, OSymbol): return (envs[func.name], self.pop())
+        if isinstance(func, OQuota): return (func.objs, self.pop())
         if isinstance(func, OCons):
             self[-1] = (self.func_call(func, envs), envs)
-        elif not callable(func): return (func, self.pop(-1))
+        elif not callable(func): return (func, self.pop())
         else: self[-1] = (func, envs)
         return (args,)
 
@@ -119,7 +120,7 @@ class Stack(list):
                 o = self[-1]
                 r = o[0](self, o[1], r)
                 if isinstance(r, tuple): r = r[0]
-                else: self.pop(-1)
+                else: self.pop()
             return r
         except Exception, err:
             if coredump:
