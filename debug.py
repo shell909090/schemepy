@@ -6,7 +6,7 @@
 '''
 import sys, cmd
 import pprint
-import objects
+import objects, interrupter
 
 def print_step(stack, r):
     print 'result:', r
@@ -78,7 +78,7 @@ class Debuger(cmd.Cmd):
     do_cont = do_continue
 
     def __call__(self, stack, r):
-        if not (self.callstop and isinstance(stack[-1][0], objects.OFunction))\
+        if not (self.callstop and isinstance(stack[-1][0], interrupter.OFunction))\
                 and not self.step and \
                 not (self.next and len(stack) == self.next): return
         self.prompt = '%d > ' % len(stack)
