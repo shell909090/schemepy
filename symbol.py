@@ -57,8 +57,10 @@ def sym_eval(stack, envs, objs):
 
 @define('apply', True)
 def sym_apply(stack, envs, objs):
+    assert isinstance(objs[0], objects.OSymbol)
+    func = envs[objs[0].name]
     return stack.jump(interrupter.CallStatus(
-            objs[0], objs[1], objects.nil), envs)
+            func, objects.nil, objs[1]), envs)
 
 @define('user-init-environment', True)
 def user_init_env(stack, envs, objs): return stack[0][1]
