@@ -36,6 +36,11 @@ class OCons(SchemeObject):
         while k > 0 and p is not nil: p, k = p.cdr, k-1
         if p is nil: raise IndexError()
         return p.car
+    def __setitem__(self, k, v):
+        p = self
+        while k > 0 and p is not nil: p, k = p.cdr, k-1
+        if p is nil: raise IndexError()
+        p.car = v
     def __iter__(self):
         p = self
         while p is not nil:

@@ -79,12 +79,12 @@ class Envs(object):
 class Stack(deque):
 
     def save(self, r, f):
-        self[0][1].e[1].clear()
+        self[0][1].e[1] = {}
         __import__('cPickle').dump((self, r), f, 2)
     @classmethod
     def load(cls, f, builtin):
         stack, r = __import__('cPickle').load(f)
-        stack[0][1].e[1].update(builtin)
+        stack[0][1].e[1] = builtin
         for s in stack: s[1].genfast()
         return stack, ResumeInfo(r)
 
