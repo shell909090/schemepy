@@ -133,3 +133,5 @@ def init(code, builtin):
     stack = Stack()
     stack.append((PrognStatus(code), Envs(to_list([{}, builtin,]))))
     return stack
+
+class BreakException(StandardError): pass
