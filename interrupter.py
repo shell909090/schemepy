@@ -86,7 +86,7 @@ class Stack(deque):
         stack, r = __import__('cPickle').load(f)
         stack[0][1].e[1].update(builtin)
         for s in stack: s[1].genfast()
-        return stack, r
+        return stack, ResumeInfo(r)
 
     def func_call(self, func, envs):
         o = func[0]
@@ -135,3 +135,5 @@ def init(code, builtin):
     return stack
 
 class BreakException(StandardError): pass
+class ResumeInfo(object):
+    def __init__(self, s): self.s = s
