@@ -192,7 +192,8 @@ class CondStatus(object):
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
-            if objs: return stack.jump(self.conds[0][1], envs)
+            if objs: return stack.jump(
+                interrupter.PrognStatus(self.conds[0].cdr), envs)
             self.conds = self.conds.cdr
         if self.conds is objects.nil:
             if self.dft is None: return objects.nil
@@ -207,7 +208,12 @@ def logic_cond(stack, envs, objs): return stack.jump(CondStatus(objs), envs)
 
 @define('if', False)
 def logic_if(stack, envs, objs):
-    return stack.jump(CondStatus(objects.OCons(objs), objs.get(2)), envs)
+    return stack.jump(CondStatus(objects.OCons(
+                objects.to_list([objs[0], objs[1]])), objs.get(2)), envs)
+
+@define('when', False)
+def logic_if(stack, envs, objs):
+    return stack.jump(CondStatus(objects.OCons(objs)), envs)
 
 # number functions
 @define('number?', True)
@@ -234,7 +240,12 @@ def num_div(stack, envs, objs):
 @define('=', True)
 def num_eq(stack, envs, objs):
     return isinstance(objs[0], (int, long, float)) and \
-        isinstance(objs[1], (int, long, float)) and objs[0] == objs[1]
+        type(objs[0]) == type(objs[1]) and objs[0] == objs[1]
+
+@define('!=', True)
+def num_eq(stack, envs, objs):
+    return not isinstance(objs[0], (int, long, float)) or \
+        type(objs[0]) != type(objs[1]) and objs[0] != objs[1]
 
 @define('<', True)
 def num_lt(stack, envs, objs):

@@ -4,7 +4,7 @@
 @date: 2012-12-15
 @author: shell.xu
 '''
-import sys, cmd
+import sys, cmd, pdb
 import pprint
 import objects, interrupter
 
@@ -25,6 +25,7 @@ class Debuger(cmd.Cmd):
         print 'quit'
         sys.exit(-1)
     do_EOF = do_quit
+    def do_python(self, line): pdb.set_trace()
 
     def do_stack(self, line):
         ''' print full stack '''

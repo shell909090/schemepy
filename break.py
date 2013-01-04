@@ -27,11 +27,13 @@ def main():
     r = None
     if path.exists(sys.argv[1]):
         with open(sys.argv[1], 'rb') as fi:
-            stack, r = interrupter.Stack.load(fi, symbol.builtin)
+            stack, r = interrupter.Stack.load(fi.read(), symbol.builtin)
     else:
         code = objects.scompile(parser.split_code_tree(src))
         stack = interrupter.init(code, symbol.builtin)
-    try: print stack.trampoline(r, coredump=sys.argv[1])
+    def coredump(data):
+        with open(sys.argv[1], 'wb') as fi: fi.write(data)
+    try: print stack.trampoline(r, coredump=coredump)
     except interrupter.BreakException, be: pass
 
 if __name__ == '__main__': main()

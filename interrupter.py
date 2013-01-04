@@ -42,7 +42,7 @@ class PrognStatus(object):
         return 'progn ' + str(self.objs)
 
     def __call__(self, stack, envs, objs):
-        if self.objs.cdr == nil: return stack.jump(self.objs.car, envs)
+        if self.objs.cdr is nil: return stack.jump(self.objs.car, envs)
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
 
@@ -104,13 +104,14 @@ class Envs(object):
         return self.fast[name]
 
 class Stack(deque):
-    def save(self, r, f):
+
+    def save(self, r):
         self[0][1].e[1] = {}
-        __import__('cPickle').dump((self, r), f, 2)
+        return __import__('cPickle').dumps((self, r), 2)
 
     @classmethod
-    def load(cls, f, builtin):
-        stack, r = __import__('cPickle').load(f)
+    def load(cls, data, builtin):
+        stack, r = __import__('cPickle').loads(data)
         stack[0][1].e[1] = builtin
         for s in stack: s[1].genfast()
         return stack, ResumeInfo(r)
@@ -158,12 +159,7 @@ class Stack(deque):
                 else: self.pop()
             return r
         except Exception, err:
-            if coredump:
-                if isinstance(coredump, basestring):
-                    with open(coredump, 'wb') as cd:
-                        self.save(r, cd)
-                else:
-                    self.save(r, coredump)
+            if coredump: coredump(self.save(r))
             raise
 
 def init(code, builtin):
