@@ -5,7 +5,7 @@
 @author: shell.xu
 '''
 import os, sys, cPickle
-import parser, objects, interrupter, symbol
+import schemepy
 from os import path
 
 src = '''
@@ -16,24 +16,24 @@ src = '''
 (+ 1 2)
 '''
 
-@symbol.define('pause', True)
+@schemepy.define('pause', True)
 def sym_pause(stack, envs, objs):
-    if isinstance(objs, interrupter.ResumeInfo):
+    if isinstance(objs, schemepy.ResumeInfo):
         print objs.s
-        return objects.nil
-    raise interrupter.BreakException(objs)
+        return schemepy.nil
+    raise schemepy.BreakException(objs)
 
 def main():
     r = None
     if path.exists(sys.argv[1]):
         with open(sys.argv[1], 'rb') as fi:
-            stack, r = interrupter.Stack.load(fi.read(), symbol.builtin)
+            stack, r = schemepy.Stack.load(fi.read(), schemepy.builtin)
     else:
-        code = objects.scompile(parser.split_code_tree(src))
-        stack = interrupter.init(code, symbol.builtin)
+        code = schemepy.scompile(schemepy.split_code_tree(src))
+        stack = schemepy.init(code, schemepy.builtin)
     def coredump(data):
         with open(sys.argv[1], 'wb') as fi: fi.write(data)
     try: print stack.trampoline(r, coredump=coredump)
-    except interrupter.BreakException, be: pass
+    except schemepy.BreakException, be: pass
 
 if __name__ == '__main__': main()

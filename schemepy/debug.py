@@ -5,7 +5,6 @@
 @author: shell.xu
 '''
 import sys, cmd, pdb
-import pprint
 import objects, interrupter
 
 def print_step(stack, r):

@@ -5,12 +5,12 @@
 @author: shell.xu
 '''
 import sys, unittest
-import parser, interrupter, symbol
+import schemepy
 
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
-    code = interrupter.scompile(parser.split_code_tree(data.decode('utf-8')))
-    stack = interrupter.init(code, symbol.builtin)
+    code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+    stack = schemepy.init(code, schemepy.builtin)
     return stack.trampoline()
 
 class TestScheme(unittest.TestCase):
