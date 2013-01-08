@@ -86,7 +86,7 @@ class Envs(object):
         self.e, self.fast = state, {}
 
     def __repr__(self):
-        return objects.format_list(self.e)
+        return format_list(self.e)
 
     def genfast(self):
         for i in reversed_list(self.e):
