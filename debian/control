@@ -1,0 +1,17 @@
+Source: schemepy
+Section: lisp
+Priority: extra
+Maintainer: Shell Xu <shell909090@gmail.com>
+Build-Depends: debhelper (>= 8)
+Standards-Version: 3.9.3
+X-Python-Version: >= 2.6
+Homepage: 
+
+Package: schemepy
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: scheme interrupter written by python
+ scheme interrupter written by python.
+  * tail recursion
+  * execute freeze/resume
+  * a little debuger

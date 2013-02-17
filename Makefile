@@ -1,16 +1,24 @@
 #!/usr/bin/make -f
+
+## Author: xuzx@shterm.com
+## Version: $Id: Makefile,v 0.0 2011/05/18 06:19:52 shell Exp $
+## Keywords: 
+## X-URL: 
+
+PYTHON=python2.6
 CC=gcc
 CFLAGS=$(shell python-config --includes) $(shell python-config --libs)
 
-all: build
+all: build-rpm build-deb
 
 clean:
-	rm -f *.o *.so *.pyc
+	rm -rf build dist MANIFEST
 
-build: parser.so
+clean-deb:
+	fakeroot debian/rules clean
 
-%.so: %.c
-	$(CC) $(CFLAGS) -shared -o $@ $^
+build-deb:
+	dpkg-buildpackage -rfakeroot
 
-%.c: %.pyx
-	cython -o $@ $^
+build-rpm:
+	$(PYTHON) setup.py bdist_rpm --python=$(PYTHON)
