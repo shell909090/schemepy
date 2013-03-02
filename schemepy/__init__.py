@@ -5,3 +5,4 @@ from parser import split_code_tree
 from symbol import builtin, define
 
 BreakException = interrupter.BreakException
+ExitException = interrupter.ExitException

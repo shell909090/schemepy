@@ -22,18 +22,18 @@ def compile_src(filename):
 def indent_src(filename, stream):
     with open(filename, 'r') as f: data = f.read()
     code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
-    for i in code: stream.write(str(i)+'\n')
+    for i in code: stream.write(unicode(i)+u'\n')
 
 class REPL(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.prompt = '> '
+        self.prompt = u'> '
         self.env = schemepy.Envs(schemepy.to_list([{}, schemepy.builtin,]))
 
     def do_quit(self, line):
         ''' quit system '''
-        print 'quit'
+        print u'quit'
         sys.exit(-1)
     do_EOF = do_quit
 

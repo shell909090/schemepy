@@ -8,7 +8,7 @@ import sys, cmd, pdb
 import objects, interrupter
 
 def print_step(stack, r):
-    print 'result:', r
+    print u'result:', r
     for i in stack: print i[0]
 
 # TODO: breakpoint, cond breakpoint, clear, exec
@@ -18,10 +18,10 @@ class Debuger(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.step, self.next, self.callstop = True, None, None
 
-    def default(self, line): print 'unknown command'
+    def default(self, line): print u'unknown command'
     def do_quit(self, line):
         ''' quit system '''
-        print 'quit'
+        print u'quit'
         sys.exit(-1)
     do_EOF = do_quit
     def do_python(self, line): pdb.set_trace()
@@ -31,7 +31,7 @@ class Debuger(cmd.Cmd):
         for i in self.stack: print i[0]
     def do_result(self, line):
         ''' print step result '''
-        print 'result:', self.r
+        print u'result:', self.r
 
     def do_all(self, line):
         ''' print all variable '''
@@ -81,8 +81,8 @@ class Debuger(cmd.Cmd):
         if not (self.callstop and isinstance(stack[-1][0], interrupter.OFunction))\
                 and not self.step and \
                 not (self.next and len(stack) == self.next): return
-        self.prompt = '%d > ' % len(stack)
+        self.prompt = u'%d > ' % len(stack)
         self.stack, self.r = stack, r
-        print 'result:', self.r
+        print u'result:', self.r
         print stack[-1][0]
         self.cmdloop()

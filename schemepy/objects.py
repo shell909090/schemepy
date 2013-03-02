@@ -85,41 +85,42 @@ def scompile(obj):
     elif isinstance(obj, (unicode, str)):
         if isinstance(obj, str):
             obj = obj.decode('utf-8')
-        if obj[0] == '#':
-            if obj[1] == 't': return True
-            elif obj[1] == 'f': return False
+        if obj[0] == u'#':
+            if obj[1] == u't': return True
+            elif obj[1] == u'f': return False
             else: raise Exception('boolean name error')
-        elif obj[0] == '"':
+        elif obj[0] == u'"':
             return obj[1:-1]
-        elif obj[0] == "'":
+        elif obj[0] == u"'":
             return OQuote()
         elif obj[0].isdigit() or (\
-            obj[0] == '-' and len(obj) > 1 and obj[1].isdigit()):
-            if '.' in obj: return float(obj)
+            obj[0] == u'-' and len(obj) > 1 and obj[1].isdigit()):
+            if u'.' in obj: return float(obj)
             return int(obj)
         else: return OSymbol(obj)
 
 def format_list(o, lv=0):
     if o.cdr is nil:
-        return '(%s)' % format(o.car)
+        return u'(%s)' % format(o.car)
     elif not isinstance(o.cdr, OCons):
-        return '(%s . %s)' % (format(o.car), format(o.cdr))
-    if isinstance(o[0], OSymbol) and o[0].name == 'define':
-        s = '(%s %s\n' % (format(o[0], lv), format(o[1], lv))
+        return u'(%s . %s)' % (format(o.car), format(o.cdr))
+    if isinstance(o[0], OSymbol) and o[0].name == u'define':
+        s = u'(%s %s\n' % (format(o[0], lv), format(o[1], lv))
         for i in o.cdr.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
         return s[:-1]
-    s = '(%s)' % ' '.join(map(lambda o: format(o, lv), o))
+    s = u'(%s)' % ' '.join(map(lambda o: format(o, lv), o))
     if (2*lv + len(s)) < FORMAT_WIDTH: return s
-    s = '(%s\n' % format(o[0], lv)
-    for i in o.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
-    return s[:-1]+')'
+    s = u'(%s\n' % format(o[0], lv)
+    for i in o.cdr: s += '  ' * (lv+1) + format(i, lv+1) + u'\n'
+    return s[:-1]+u')'
 
 def format(o, lv=0):
     return {
-        bool: lambda o: '#t' if o else '#f',
-        basestring: lambda o: '"%s"' % str(o),
-        ONil: lambda o: '()',
+        bool: lambda o: u'#t' if o else u'#f',
+        str: lambda o: u'"%s"' % str(o),
+        unicode: lambda o: '"%s"' % unicode(o),
+        ONil: lambda o: u'()',
         OSymbol: lambda o: o.name,
-        OQuote: lambda o: "'" + format(o.objs),
+        OQuote: lambda o: u"'" + format(o.objs),
         OCons: lambda o: format_list(o, lv),
     }.get(o.__class__, str)(o)

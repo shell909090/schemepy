@@ -10,6 +10,7 @@ from objects import *
 all = ['Stack', 'BreakException', 'ResumeInfo']
 
 class BreakException(StandardError): pass
+class ExitException(StandardError): pass
 
 class ResumeInfo(object):
     def __init__(self, s): self.s = s
@@ -20,18 +21,18 @@ class OFunction(object):
         self.params, self.objs, self.evaled = params, objs, True
 
     def __repr__(self):
-        return '<function %s>' % self.name
+        return u'<function %s>' % self.name
 
     def __call__(self, stack, envs, objs):
         r, pn, pv = {}, self.params, objs
         while pn is not nil and pv is not nil:
-            if pn[0].name == '.':
+            if pn[0].name == u'.':
                 r[pn[1].name] = pv
                 break
             r[pn[0].name] = pv[0]
             pn, pv = pn.cdr, pv.cdr
         newenv = self.envs.fork(r)
-        if FUNC_DEBUG: print 'call', self.name, newenv.stack[-1]
+        if FUNC_DEBUG: print u'call', self.name, newenv.stack[-1]
         return stack.jump(PrognStatus(self.objs), newenv)
 
 class PrognStatus(object):
@@ -39,7 +40,7 @@ class PrognStatus(object):
         self.objs, self.rslt = objs, None
 
     def __repr__(self):
-        return 'progn ' + str(self.objs)
+        return u'progn ' + str(self.objs)
 
     def __call__(self, stack, envs, objs):
         if self.objs.cdr is nil: return stack.jump(self.objs.car, envs)
@@ -66,7 +67,7 @@ class CallStatus(object):
         self.func, self.params, self.objs = func, params, objs
 
     def __repr__(self):
-        return 'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
+        return u'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
 
     def __call__(self, stack, envs, objs):
         if objs is not None: self.params = OCons(objs, self.params)
