@@ -159,6 +159,7 @@ class Stack(deque):
                 if isinstance(r, tuple): r = r[0]
                 else: self.pop()
             return r
+        except ExitException, err: return err.args[0]
         except Exception, err:
             if coredump: coredump(self.save(r))
             raise

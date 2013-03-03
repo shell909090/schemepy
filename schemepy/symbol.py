@@ -285,4 +285,4 @@ def display(stack, envs, objs):
 
 @define(u'exit', True)
 def do_exit(stack, envs, objs):
-    raise interrupter.ExitException()
+    raise interrupter.ExitException(objs)
