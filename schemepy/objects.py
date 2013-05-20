@@ -68,7 +68,14 @@ def reversed_list(li):
     return p
 
 class OSymbol(SchemeObject):
+    cache = {}
     def __init__(self, name): self.name = name
+    def __new__(cls, name):
+        o = cls.cache.get(name)
+        if o is not None: return o
+        o = object.__new__(cls, name)
+        cls.cache[name] = o
+        return o
 
 class OQuote(SchemeObject):
     def __init__(self): self.objs = None

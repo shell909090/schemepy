@@ -101,9 +101,19 @@ def is_symbol(stack, envs, objs): return isinstance(objs[0], objects.OSymbol)
 
 @define(u'eq?', True)
 def is_eq(stack, envs, objs):
-    if isinstance(objs[0], objects.OSymbol) and isinstance(objs[1], objects.OSymbol):
-        return objs[0].name == objs[1].name
-    else: return objs[0] is objs[1]
+    o = objs[0]
+    return all(map(lambda i: i is o, objs))
+
+def obj_equal(l, r):
+    if l.__class__ is not l.__class__: return False
+    if isinstance(l, basestring): return l == r
+    if hasattr(l, '__iter__'): return all(map(lambda i: obj_equal(*i), zip(l, r)))
+    return l is r
+
+@define(u'equal?', True)
+def is_equal(stack, envs, objs):
+    o = objs[0]
+    return all(map(lambda i: obj_equal(i, o), objs))
 
 # list functions
 @define(u'list', True)
