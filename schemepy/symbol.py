@@ -271,6 +271,15 @@ def num_ngt(stack, envs, objs):
 def num_remainder(stack, envs, objs):
     return objs[0] % objs[1]
 
+# string functions
+@define(u'string=?', True)
+def str_equal(stack, envs, objs):
+    o = objs[0]
+    for i in objs:
+        if not isinstance(i, basestring): return False
+        if i != objs[0]: return False
+    return True
+
 # other functions
 @define(u'display', True)
 @define(u'error', True)
