@@ -73,7 +73,7 @@ class OSymbol(SchemeObject):
     def __new__(cls, name):
         o = cls.cache.get(name)
         if o is not None: return o
-        o = object.__new__(cls, name)
+        o = object.__new__(cls)
         cls.cache[name] = o
         return o
 
