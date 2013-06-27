@@ -5,6 +5,7 @@
 @author: shell.xu
 '''
 import objects, interrupter
+from symbol import define
 
 # number functions
 @define(u'number?', True)

@@ -62,6 +62,10 @@ def sym_apply(stack, envs, objs):
     return stack.jump(interrupter.CallStatus(
             func, objects.nil, objs[1]), envs)
 
+@define(u'call-with-current-continuation', True)
+def callcc(stack, envs, objs):
+    func = objs[0]
+
 @define(u'user-init-environment', True)
 def user_init_env(stack, envs, objs): return stack[0][1]
 

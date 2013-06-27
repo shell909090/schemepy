@@ -5,6 +5,7 @@
 @author: shell.xu
 '''
 import objects, interrupter
+from symbol import define
 
 # list functions
 @define(u'list', True)
