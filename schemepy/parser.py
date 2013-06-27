@@ -6,7 +6,7 @@
 '''
 import re
 
-split_code_re = re.compile('([() \n\r\t])')
+split_code_re = re.compile("([()' \n\r\t])")
 string_cutter_re = re.compile('(".*?(?<!\\\\)"|;.*?\n)', re.S)
 replace_tab = [(u'\\t', u'\t'), (u'\\n', u'\n'), (u'\\', u'')]
 def split_code(code):
@@ -30,9 +30,6 @@ def build_block(chunks, igcmt, term=None):
         elif c in symbol_pairs:
             yield list(build_block(chunks, igcmt, symbol_pairs[c]))
             continue
-        if c[0] == "'":
-            yield "'"
-            c = c[1:]
         if c: yield c
     if term: raise Exception('symbol %s dismatch' % term)
 
