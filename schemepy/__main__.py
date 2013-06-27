@@ -15,11 +15,8 @@ def print_src(filename):
 
 def compile_src(filename):
     with open(filename, 'r') as f: data = f.read()
-    for i in xrange(100):
-        code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+    code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
     __import__('pprint').pprint(code)
-    # with open(path.splitext(filename)[0]+'.scc', 'wb') as fo:
-    #     cPickle.dump(code, fo, 2)
 
 def indent_src(filename, stream):
     with open(filename, 'r') as f: data = f.read()
