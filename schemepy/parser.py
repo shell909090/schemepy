@@ -4,52 +4,37 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
+import re
 
+split_code_re = re.compile('([() \n\r\t])')
+string_cutter_re = re.compile('(".*?(?<!\\\\)"|;.*?\n)', re.S)
 replace_tab = [(u'\\t', u'\t'), (u'\\n', u'\n'), (u'\\', u'')]
-def find_quote_end(code, start):
-    idx = start
-    while True:
-        idx = code.find(u'"', idx+1)
-        if code[idx-1] != u'\\':
-            code = code[start:idx+1]
-            for k, v in replace_tab: code = code.replace(k, v)
-            return code, idx
-    raise Exception()
-
-def find_str(s, start, charset):
-    for i, c in enumerate(s[start:]):
-        if c in charset: return i+start
-    return -1
-
-control_code = u'()\'";'
 def split_code(code):
-    start = 0
-    while start < len(code):
-        idx = find_str(code, start, control_code)
-        if idx == -1: break
-        if code[start:idx]:
-            for c in code[start: idx].split(): yield c
-        if code[idx] == u'"':
-            c, idx = find_quote_end(code, idx)
-            yield c
-        elif code[idx] == u';':
-            idxend = code.find(u'\n', idx)
-            if idxend == -1: idxend = len(code)
-            yield code[idx:idxend]
-            idx = idxend
-        else: yield code[idx]
-        start = idx+1
+    for s in string_cutter_re.split(code):
+        if not s: continue
+        if s[0] == ';': yield s.strip()
+        elif s[0] == '"':
+            if s[-1] != '"': raise Exception('string not closed: %s' % s)
+            for k, v in replace_tab: s = s.replace(k, v)
+            yield s
+        else:
+            for c in split_code_re.split(s):
+                if c and c not in ' \t\n\r': yield c
 
 symbol_pairs = {u'(': u')',}
-def build_block(chunks, igcmt, header = None):
+def build_block(chunks, igcmt, term=None):
     l = []
     for c in chunks:
         if igcmt and c.startswith(u';'): continue
-        elif c in symbol_pairs: l.append(build_block(chunks, igcmt, c))
-        elif header and c == symbol_pairs[header]: return l
-        else: l.append(c)
-    if header: raise Exception('symbol %s dismatch' % header)
-    return l
+        elif term and c == term: return
+        elif c in symbol_pairs:
+            yield list(build_block(chunks, igcmt, symbol_pairs[c]))
+            continue
+        if c[0] == "'":
+            yield "'"
+            c = c[1:]
+        if c: yield c
+    if term: raise Exception('symbol %s dismatch' % term)
 
 def split_code_tree(code, igcmt=True):
-    return build_block(split_code(code), igcmt)
+    return list(build_block(split_code(code), igcmt))
