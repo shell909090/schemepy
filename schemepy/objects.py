@@ -4,6 +4,7 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
+import re
 
 FORMAT_WIDTH=60
 FUNC_DEBUG=False
@@ -80,31 +81,27 @@ class OSymbol(SchemeObject):
 class OQuote(SchemeObject):
     def __init__(self): self.objs = None
 
+is_num_re = re.compile('-?[0-9\.]+')
 def scompile(obj):
-    if isinstance(obj, (int, long, float)):
-        return obj
-    elif isinstance(obj, (list, tuple)):
+    if not isinstance(obj, tuple):
         l = map(scompile, obj)
         for i, o in enumerate(l):
-            if isinstance(o, OQuote):
-                o.objs = l.pop(i+1)
+            if isinstance(o, OQuote): o.objs = l.pop(i+1)
         return to_list(l)
-    elif isinstance(obj, (unicode, str)):
-        if isinstance(obj, str):
-            obj = obj.decode('utf-8')
-        if obj[0] == u'#':
-            if obj[1] == u't': return True
-            elif obj[1] == u'f': return False
-            else: raise Exception('boolean name error')
-        elif obj[0] == u'"':
-            return obj[1:-1]
-        elif obj[0] == u"'":
-            return OQuote()
-        elif obj[0].isdigit() or (\
-            obj[0] == u'-' and len(obj) > 1 and obj[1].isdigit()):
-            if u'.' in obj: return float(obj)
-            return int(obj)
-        else: return OSymbol(obj)
+    obj, line = obj
+    if isinstance(obj, str): obj = obj.decode('utf-8')
+    if obj[0] == u'#':
+        r = {u't': True, u'f': False}.get(obj[1:])
+        assert r is not None, 'boolean name error: %s' % obj
+        return r
+    elif obj[0] == u'"':
+        assert obj[-1] == '"', 'quote not close in line %d' % line
+        return obj[1:-1]
+    elif obj == u"'": return OQuote()
+    elif is_num_re.match(obj):
+        if u'.' in obj: return float(obj)
+        return int(obj)
+    else: return OSymbol(obj)
 
 def format_list(o, lv=0):
     if o.cdr is nil:
@@ -123,7 +120,7 @@ def format_list(o, lv=0):
 
 def format(o, lv=0):
     return {
-        bool: lambda o: u'#t' if o else u'#f',
+        bool: {True: u'#t', False: u'#f'}.get,
         str: lambda o: u'"%s"' % str(o),
         unicode: lambda o: '"%s"' % unicode(o),
         ONil: lambda o: u'()',
