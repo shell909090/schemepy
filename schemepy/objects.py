@@ -111,7 +111,7 @@ def format_list(o, lv=0):
     if isinstance(o[0], OSymbol) and o[0].name == u'define':
         s = u'(%s %s\n' % (format(o[0], lv), format(o[1], lv))
         for i in o.cdr.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
-        return s[:-1]
+        return s[:-1]+u')'
     s = u'(%s)' % ' '.join(map(lambda o: format(o, lv), o))
     if (2*lv + len(s)) < FORMAT_WIDTH: return s
     s = u'(%s\n' % format(o[0], lv)
