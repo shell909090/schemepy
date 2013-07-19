@@ -8,13 +8,14 @@
 all: build-rpm build-deb
 
 clean:
-	rm -rf build dist MANIFEST covhtml .coverage
+	rm -rf build dist MANIFEST covhtml .coverage report.txt
 
 test:
 	python test_scheme.py
 
 check:
-	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy
+	pymetrics -SC schemepy/*.py > report.txt
+	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy >> report.txt
 
 covhtml:
 	python-coverage run test_scheme.py

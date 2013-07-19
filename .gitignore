@@ -1,9 +1,12 @@
 parser
+
 *~
 *.sw?
 *.pyc
 *.pyo
 *.scc
 *.cdp
+
 .coverage*
 covhtml
+report.txt
