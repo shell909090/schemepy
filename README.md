@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/shell909090/schemepy.png?branch=master)](https://travis-ci.org/shell909090/schemepy)
+
 # 简述 #
 
 schemepy是使用python写的支持尾递归的scheme解释器。
