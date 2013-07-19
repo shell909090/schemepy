@@ -5,14 +5,10 @@
 ## Keywords: 
 ## X-URL: 
 
-PYTHON=python2.6
-CC=gcc
-CFLAGS=$(shell python-config --includes) $(shell python-config --libs)
-
 all: build-rpm build-deb
 
 clean:
-	rm -rf build dist MANIFEST covhtml
+	rm -rf build dist MANIFEST covhtml .coverage
 
 test:
 	python test_scheme.py
@@ -31,4 +27,4 @@ build-deb:
 	dpkg-buildpackage -rfakeroot
 
 build-rpm:
-	$(PYTHON) setup.py bdist_rpm --python=$(PYTHON)
+	python setup.py bdist_rpm

@@ -62,7 +62,15 @@ class TestParser(unittest.TestCase):
         code = schemepy.split_code_tree(data.decode('utf-8'))
         self.assertEqual(
             unfold_code(code),
-            [[u'define', [u'same-partiy', u'a', u'.', u'l'], [u'define', [u'same-even', u'a', u'l'], [u'cond', [[u'null?', u'l'], u"'", []], [[u'=', u'a', [u'remainder', [u'car', u'l'], u'2']], [u'cons', [u'car', u'l'], [u'same-even', u'a', [u'cdr', u'l']]]], [u'else', [u'same-even', u'a', [u'cdr', u'l']]]]], [u'same-even', [u'remainder', u'a', u'2'], u'l']], [u'same-partiy', u'1', u'3', u'4', u'5', u'6', u'7']])
+            [[u'define', [u'same-partiy', u'a', u'.', u'l'],
+              [u'define', [u'same-even', u'a', u'l'],
+               [u'cond',
+                [[u'null?', u'l'], u"'", []],
+                [[u'=', u'a', [u'remainder', [u'car', u'l'], u'2']],
+                 [u'cons', [u'car', u'l'], [u'same-even', u'a', [u'cdr', u'l']]]],
+                [u'else', [u'same-even', u'a', [u'cdr', u'l']]]]],
+              [u'same-even', [u'remainder', u'a', u'2'], u'l']],
+             [u'same-partiy', u'1', u'3', u'4', u'5', u'6', u'7']])
 
     def test_compiled_code(self):
         with open('code/same-partiy.scm', 'r') as f: data = f.read()

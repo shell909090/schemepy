@@ -6,3 +6,4 @@ parser
 *.scc
 *.cdp
 .coverage*
+covhtml
