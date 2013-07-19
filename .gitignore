@@ -5,3 +5,4 @@ parser
 *.pyo
 *.scc
 *.cdp
+.coverage*

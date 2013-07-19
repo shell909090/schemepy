@@ -12,7 +12,17 @@ CFLAGS=$(shell python-config --includes) $(shell python-config --libs)
 all: build-rpm build-deb
 
 clean:
-	rm -rf build dist MANIFEST
+	rm -rf build dist MANIFEST covhtml
+
+test:
+	python test_scheme.py
+
+check:
+	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy
+
+covhtml:
+	python-coverage run test_scheme.py
+	python-coverage html -d $@
 
 clean-deb:
 	fakeroot debian/rules clean
