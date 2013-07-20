@@ -1,0 +1,11 @@
+language: python
+python:
+  - "2.7"
+script: make test
+
+notifications:
+  email:
+    recipients:
+      - shell909090@gmail.com
+    on_success: never
+    on_failure: change
