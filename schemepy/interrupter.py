@@ -23,7 +23,7 @@ class OFunction(object):
     def __repr__(self):
         return u'<function %s>' % self.name
 
-    def __call__(self, stack, envs, objs):
+    def __call__(self, stack, _, objs):
         r, pn, pv = {}, self.params, objs
         while pn is not nil and pv is not nil:
             if pn[0].name == u'.':
@@ -42,7 +42,7 @@ class PrognStatus(object):
     def __repr__(self):
         return u'progn ' + str(self.objs)
 
-    def __call__(self, stack, envs, objs):
+    def __call__(self, stack, envs, _):
         if self.objs.cdr is nil: return stack.jump(self.objs.car, envs)
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
@@ -110,8 +110,8 @@ class Stack(deque):
         self[0][1].e[1] = {}
         return __import__('cPickle').dumps((self, r), 2)
 
-    @classmethod
-    def load(cls, data, builtin):
+    @staticmethod
+    def load(data, builtin):
         stack, r = __import__('cPickle').loads(data)
         stack[0][1].e[1] = builtin
         for s in stack: s[1].genfast()
@@ -164,7 +164,7 @@ class Stack(deque):
             if coredump: coredump(self.save(r))
             raise
 
-def init(code, builtin):
+def init(code, builtin_):
     stack = Stack()
-    stack.append((PrognStatus(code), Envs(to_list([{}, builtin,]))))
+    stack.append((PrognStatus(code), Envs(to_list([{}, builtin_,]))))
     return stack
