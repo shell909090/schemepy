@@ -5,4 +5,7 @@ script: make test
 
 notifications:
   email:
-    - shell909090@gmail.com
+    recipients:
+      - shell909090@gmail.com
+    on_success: never
+    on_failure: change
