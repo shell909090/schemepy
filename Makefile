@@ -5,14 +5,21 @@
 ## Keywords: 
 ## X-URL: 
 
-PYTHON=python2.6
-CC=gcc
-CFLAGS=$(shell python-config --includes) $(shell python-config --libs)
-
 all: build-rpm build-deb
 
 clean:
-	rm -rf build dist MANIFEST
+	rm -rf build dist MANIFEST covhtml .coverage report.txt
+
+test:
+	python test_scheme.py
+
+check:
+	pymetrics -SC schemepy/*.py > report.txt
+	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy >> report.txt
+
+covhtml:
+	python-coverage run test_scheme.py
+	python-coverage html -d $@
 
 clean-deb:
 	fakeroot debian/rules clean
@@ -21,4 +28,4 @@ build-deb:
 	dpkg-buildpackage -rfakeroot
 
 build-rpm:
-	$(PYTHON) setup.py bdist_rpm --python=$(PYTHON)
+	python setup.py bdist_rpm

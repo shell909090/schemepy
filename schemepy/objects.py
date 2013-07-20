@@ -71,6 +71,7 @@ def reversed_list(li):
 class OSymbol(SchemeObject):
     cache = {}
     def __init__(self, name): self.name = name
+    def __getnewargs__(self): return (self.name,)
     def __new__(cls, name):
         o = cls.cache.get(name)
         if o is not None: return o
@@ -99,6 +100,7 @@ def scompile(obj):
         return obj[1:-1]
     elif obj == u"'": return OQuote()
     elif is_num_re.match(obj):
+        if obj == u'.': return OSymbol(obj)
         if u'.' in obj: return float(obj)
         return int(obj)
     else: return OSymbol(obj)
@@ -112,7 +114,7 @@ def format_list(o, lv=0):
         s = u'(%s %s\n' % (format(o[0], lv), format(o[1], lv))
         for i in o.cdr.cdr: s += '  ' * (lv+1) + format(i, lv+1) + '\n'
         return s[:-1]+u')'
-    s = u'(%s)' % ' '.join(map(lambda o: format(o, lv), o))
+    s = u'(%s)' % ' '.join(format(i, lv) for i in o)
     if (2*lv + len(s)) < FORMAT_WIDTH: return s
     s = u'(%s\n' % format(o[0], lv)
     for i in o.cdr: s += '  ' * (lv+1) + format(i, lv+1) + u'\n'
