@@ -133,7 +133,7 @@ def format_list(o, lv=0):
         s = u'(%s %s\n' % (format_obj(o[0], lv), format_obj(o[1], lv))
         for i in o.cdr.cdr:
             s += '  ' * (lv+1) + format_obj(i, lv+1) + '\n'
-        return s[:-1]
+        return s[:-1] + u')'
     s = u'(%s)' % ' '.join(format_obj(i, lv) for i in o)
     if (2*lv + len(s)) < FORMAT_WIDTH:
         return s

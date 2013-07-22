@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/shell909090/schemepy.png?branch=master)](https://travis-ci.org/shell909090/schemepy)
+[![Build Status](https://travis-ci.org/shell909090/schemepy.png?branch=callcc)](https://travis-ci.org/shell909090/schemepy)
 
 # 简述 #
 
