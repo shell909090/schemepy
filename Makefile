@@ -16,6 +16,7 @@ test:
 check:
 	pymetrics -SC schemepy/*.py > report.txt
 	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy >> report.txt
+	pylint -d C0103,C0111 schemepy
 
 covhtml:
 	python-coverage run test_scheme.py

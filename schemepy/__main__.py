@@ -9,19 +9,23 @@ import schemepy
 from os import path
 
 def print_src(filename):
-    with open(filename, 'r') as f: data = f.read()
+    with open(filename, 'r') as f:
+        data = f.read()
     code = schemepy.split_code_tree(data.decode('utf-8'))
     __import__('pprint').pprint(code)
 
 def compile_src(filename):
-    with open(filename, 'r') as f: data = f.read()
+    with open(filename, 'r') as f:
+        data = f.read()
     code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
     __import__('pprint').pprint(code)
 
 def indent_src(filename, stream):
-    with open(filename, 'r') as f: data = f.read()
+    with open(filename, 'r') as f:
+        data = f.read()
     code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
-    for i in code: stream.write(unicode(i)+u'\n')
+    for i in code:
+        stream.write(unicode(i)+u'\n')
 
 class REPL(cmd.Cmd):
 
@@ -30,7 +34,7 @@ class REPL(cmd.Cmd):
         self.prompt = u'> '
         self.env = schemepy.Envs(schemepy.to_list([{}, schemepy.builtin,]))
 
-    def do_quit(self, line):
+    def do_quit(self, _):
         ''' quit system '''
         print u'quit'
         sys.exit(-1)
@@ -59,27 +63,35 @@ def main():
     if '-h' in optdict:
         print main.__doc__
         return
-    if '-c' in optdict: return compile_src(argv[0])
-    if '-p' in optdict: return print_src(argv[0])
-    if '-i' in optdict: return indent_src(argv[0], sys.stdout)
+    if '-c' in optdict:
+        return compile_src(argv[0])
+    if '-p' in optdict:
+        return print_src(argv[0])
+    if '-i' in optdict:
+        return indent_src(argv[0], sys.stdout)
 
-    if len(argv) == 0: return REPL().cmdloop()
+    if len(argv) == 0:
+        return REPL().cmdloop()
     fname, extname = path.splitext(argv[0])
 
     if extname == '.cdp':
         with open(argv[0], 'rb') as fi:
             stack, r = schemepy.Stack.load(fi.read(), symbol.builtin)
     elif extname == '.scc':
-        with open(argv[0], 'rb') as fi: code = cPickle.load(fi)
+        with open(argv[0], 'rb') as fi:
+            code = cPickle.load(fi)
         stack = schemepy.init(code, symbol.builtin)
     else:
-        with open(argv[0], 'r') as f: data = f.read()
+        with open(argv[0], 'r') as f:
+            data = f.read()
         code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
         stack = schemepy.init(code, schemepy.builtin)
     dbg = schemepy.Debuger() if '-d' in optdict else None
     def coredump(data):
-        with open(fname+'.cdp', 'wb') as fo: fo.write(data)
-    if '-n' in optdict: coredump = None
+        with open(fname+'.cdp', 'wb') as fo:
+            fo.write(data)
+    if '-n' in optdict:
+        coredump = None
     print stack.trampoline(debug=dbg, coredump=coredump)
 
 if __name__ == '__main__': main()

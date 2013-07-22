@@ -7,13 +7,21 @@
 from collections import deque
 from objects import *
 
-all = ['Stack', 'BreakException', 'ResumeInfo']
+__all__ = [
+    'BreakException', 'ExitException', 'ResumeInfo', 'OFunction',
+    'PrognStatus', 'FuncStatus', 'CallStatus', 'Envs', 'Stack', 'init']
 
-class BreakException(StandardError): pass
-class ExitException(StandardError): pass
+FUNC_DEBUG=False
+
+class BreakException(StandardError):
+    pass
+
+class ExitException(StandardError):
+    pass
 
 class ResumeInfo(object):
-    def __init__(self, s): self.s = s
+    def __init__(self, s):
+        self.s = s
 
 class OFunction(object):
     def __init__(self, name, envs, params, objs):
@@ -32,7 +40,8 @@ class OFunction(object):
             r[pn[0].name] = pv[0]
             pn, pv = pn.cdr, pv.cdr
         newenv = self.envs.fork(r)
-        if FUNC_DEBUG: print u'call', self.name, newenv.stack[-1]
+        if FUNC_DEBUG:
+            print u'call', self.name, newenv.stack[-1]
         return stack.jump(PrognStatus(self.objs), newenv)
 
 class PrognStatus(object):
@@ -43,7 +52,8 @@ class PrognStatus(object):
         return u'progn ' + str(self.objs)
 
     def __call__(self, stack, envs, _):
-        if self.objs.cdr is nil: return stack.jump(self.objs.car, envs)
+        if self.objs.cdr is nil:
+            return stack.jump(self.objs.car, envs)
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
 
@@ -67,11 +77,14 @@ class CallStatus(object):
         self.func, self.params, self.objs = func, params, objs
 
     def __repr__(self):
-        return u'call %s with (%s) <- (%s)' % (self.func, self.params, self.objs)
+        return u'call %s with (%s) <- (%s)' % (
+            self.func, self.params, self.objs)
 
     def __call__(self, stack, envs, objs):
-        if objs is not None: self.params = OCons(objs, self.params)
-        if self.objs is nil: return stack.jump(self.func, envs, self.params)
+        if objs is not None:
+            self.params = OCons(objs, self.params)
+        if self.objs is nil:
+            return stack.jump(self.func, envs, self.params)
         t, self.objs = self.objs.car, self.objs.cdr
         return stack.call(t, envs)
 
@@ -94,7 +107,8 @@ class Envs(object):
             self.fast.update(i)
 
     def fork(self, r=None):
-        if r is None: r = {}
+        if r is None:
+            r = {}
         return Envs(OCons(r, self.e))
 
     def add(self, name, value):
@@ -114,14 +128,17 @@ class Stack(deque):
     def load(data, builtin):
         stack, r = __import__('cPickle').loads(data)
         stack[0][1].e[1] = builtin
-        for s in stack: s[1].genfast()
+        for s in stack:
+            s[1].genfast()
         return stack, ResumeInfo(r)
 
     def func_call(self, func, envs):
         o = func[0]
-        if not isinstance(o, OSymbol): return FuncStatus(func)
+        if not isinstance(o, OSymbol):
+            return FuncStatus(func)
         objs = envs[o.name]
-        if not objs.evaled: return CallStatus(objs, func.cdr, nil)
+        if not objs.evaled:
+            return CallStatus(objs, func.cdr, nil)
         return CallStatus(objs, nil, reversed_list(func.cdr))
 
     def call(self, func, envs, args=None):
@@ -153,15 +170,19 @@ class Stack(deque):
     def trampoline(self, r=None, debug=None, coredump=None):
         try:
             while self:
-                if debug is not None: debug(self, r)
+                if debug is not None:
+                    debug(self, r)
                 o = self[-1]
                 r = o[0](self, o[1], r)
-                if isinstance(r, tuple): r = r[0]
+                if isinstance(r, tuple):
+                    r = r[0]
                 else: self.pop()
             return r
-        except ExitException, err: return err.args[0]
+        except ExitException, err:
+            return err.args[0]
         except Exception, err:
-            if coredump: coredump(self.save(r))
+            if coredump:
+                coredump(self.save(r))
             raise
 
 def init(code, builtin_):
