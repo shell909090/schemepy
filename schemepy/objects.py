@@ -7,13 +7,12 @@
 import re
 
 __all__ = ['SchemeObject', 'ONil', 'nil', 'OCons', 'to_list', 'reversed_list',
-           'OSymbol', 'OQuote', 'scompile', 'format_list', 'format']
+           'OSymbol', 'OQuote', 'scompile', 'format_list', 'format_obj']
 
-FORMAT_WIDTH=60
-
+FORMAT_WIDTH = 60
 class SchemeObject(object):
     def __repr__(self):
-        return format(self)
+        return format_obj(self)
 
 class ONil(SchemeObject):
     def __new__(cls, *p, **kw):
@@ -127,29 +126,29 @@ def scompile(obj):
 
 def format_list(o, lv=0):
     if o.cdr is nil:
-        return u'(%s)' % format(o.car)
+        return u'(%s)' % format_obj(o.car)
     elif not isinstance(o.cdr, OCons):
-        return u'(%s . %s)' % (format(o.car), format(o.cdr))
+        return u'(%s . %s)' % (format_obj(o.car), format_obj(o.cdr))
     if isinstance(o[0], OSymbol) and o[0].name == u'define':
-        s = u'(%s %s\n' % (format(o[0], lv), format(o[1], lv))
+        s = u'(%s %s\n' % (format_obj(o[0], lv), format_obj(o[1], lv))
         for i in o.cdr.cdr:
-            s += '  ' * (lv+1) + format(i, lv+1) + '\n'
+            s += '  ' * (lv+1) + format_obj(i, lv+1) + '\n'
         return s[:-1]
-    s = u'(%s)' % ' '.join(format(i, lv) for i in o)
+    s = u'(%s)' % ' '.join(format_obj(i, lv) for i in o)
     if (2*lv + len(s)) < FORMAT_WIDTH:
         return s
-    s = u'(%s\n' % format(o[0], lv)
+    s = u'(%s\n' % format_obj(o[0], lv)
     for i in o.cdr:
-        s += '  ' * (lv+1) + format(i, lv+1) + u'\n'
+        s += '  ' * (lv+1) + format_obj(i, lv+1) + u'\n'
     return s[:-1]+u')'
 
-def format(o, lv=0):
+def format_obj(o, lv=0):
     return {
         bool: {True: u'#t', False: u'#f'}.get,
         str: lambda o: u'"%s"' % str(o),
         unicode: lambda o: '"%s"' % unicode(o),
         ONil: lambda o: u'()',
         OSymbol: lambda o: o.name,
-        OQuote: lambda o: u"'" + format(o.objs),
+        OQuote: lambda o: u"'" + format_obj(o.objs),
         OCons: lambda o: format_list(o, lv),
     }.get(o.__class__, str)(o)

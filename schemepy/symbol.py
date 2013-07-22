@@ -4,9 +4,9 @@
 @date: 2010-11-02
 @author: shell.xu
 '''
-from schemepy import objects, interrupter
+from schemepy import parser, objects, interrupter
 
-builtin={}
+builtin = {}
 def define(name, evaled=None):
     def inner(func):
         if evaled is not None:
@@ -50,7 +50,7 @@ def sym_begin(stack, envs, objs):
     return stack.jump(interrupter.PrognStatus(objs), envs)
 
 @define(u'compile', True)
-def sym_compile(_, __, objs):
+def sym_compile(_, _1, objs):
     return interrupter.scompile(parser.split_code_tree(objs[0]))
 
 @define(u'eval', True)
@@ -68,18 +68,18 @@ def sym_apply(stack, envs, objs):
             func, objects.nil, objs[1]), envs)
 
 @define(u'user-init-environment', True)
-def user_init_env(stack, _, __):
+def user_init_env(stack, _, _1):
     return stack[0][1]
 
 @define(u'current-environment', True)
-def cur_env(stack, _, __):
+def cur_env(stack, _, _1):
     return stack[-1][1]
 
 @define(u'import', True)
-def sym_import(_, __, objs):
+def sym_import(_, envs, objs):
     mod = __import__(objs[0])
-    env.fast.update(mod.builtin)
-    env.e.car.update(mod.builtin)
+    envs.fast.update(mod.builtin)
+    envs.e.car.update(mod.builtin)
 
 class LetStatus(object):
     def __init__(self, func, syms, envs, ast):
@@ -106,11 +106,11 @@ def sym_letA(stack, envs, objs):
     return stack.jump(LetStatus(objs.cdr, objs[0], envs, True), envs)
 
 @define(u'symbol?', True)
-def is_symbol(_, __, objs):
+def is_symbol(_, _1, objs):
     return isinstance(objs[0], objects.OSymbol)
 
 @define(u'eq?', True)
-def is_eq(_, __, objs):
+def is_eq(_, _1, objs):
     o = objs[0]
     return all(map(lambda i: i is o, objs))
 
@@ -124,21 +124,21 @@ def obj_equal(l, r):
     return l is r
 
 @define(u'equal?', True)
-def is_equal(_, __, objs):
+def is_equal(_, _1, objs):
     o = objs[0]
     return all(map(lambda i: obj_equal(i, o), objs))
 
 # logic functions
 @define(u'not', True)
-def logic_not(_, __, objs):
+def logic_not(_, _1, objs):
     return not objs[0]
 
 @define(u'and', True)
-def logic_and(_, __, objs):
+def logic_and(_, _1, objs):
     return reduce(lambda x, y: x and y, objs)
 
 @define(u'or', True)
-def logic_or(_, __, objs):
+def logic_or(_, _1, objs):
     return reduce(lambda x, y: x or y, objs)
 
 class CondStatus(object):
@@ -151,13 +151,15 @@ class CondStatus(object):
     def __call__(self, stack, envs, objs):
         if objs is not None:
             if objs:
-                return stack.jump(interrupter.PrognStatus(self.conds[0].cdr), envs)
+                return stack.jump(
+                    interrupter.PrognStatus(self.conds[0].cdr), envs)
             self.conds = self.conds.cdr
         if self.conds is objects.nil:
             if self.dft is None:
                 return objects.nil
             return stack.jump(self.dft, envs)
-        if isinstance(self.conds[0][0], objects.OSymbol) and self.conds[0][0].name == u'else':
+        if isinstance(self.conds[0][0], objects.OSymbol)\
+                and self.conds[0][0].name == u'else':
             return stack.jump(self.conds[0][1], envs)
         return stack.call(self.conds[0][0], envs)
 
@@ -171,32 +173,32 @@ def logic_if(stack, envs, objs):
                 objects.to_list([objs[0], objs[1]])), objs.get(2)), envs)
 
 @define(u'when', False)
-def logic_if(stack, envs, objs):
+def logic_when(stack, envs, objs):
     return stack.jump(CondStatus(objects.OCons(objs)), envs)
 
 # string functions
 @define(u'string=?', True)
-def str_equal(_, __, objs):
+def str_equal(_, _1, objs):
     o = objs[0]
     for i in objs:
         if not isinstance(i, basestring):
             return False
-        if i != objs[0]:
+        if i != o:
             return False
     return True
 
 # other functions
 @define(u'display', True)
 @define(u'error', True)
-def display(_, __, objs):
+def display(_, _1, objs):
     print ' '.join(map(unicode, list(objs)))
     return objects.nil
 
 @define(u'newline', True)
-def display(_, __, ___):
+def newline(_, _1, _2):
     print
     return objects.nil
 
 @define(u'exit', True)
-def do_exit(_, __, objs):
+def do_exit(_, _1, objs):
     raise interrupter.ExitException(objs)

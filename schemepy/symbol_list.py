@@ -4,52 +4,52 @@
 @date: 2013-06-25
 @author: shell.xu
 '''
-from schemepy import objects, interrupter
-from symbol import define
+from schemepy import objects, interrupter, symbol
+define = symbol.define
 
 # list functions
 @define(u'list', True)
-def list_list(_, __, objs):
+def list_list(_, _1, objs):
     return objs
 
 @define(u'null?', True)
-def list_null(_, __, objs):
+def list_null(_, _1, objs):
     return objs[0] is objects.nil
 
 @define(u'pair?', True)
-def list_pair(_, __, objs):
+def list_pair(_, _1, objs):
     return isinstance(objs[0], objects.OCons)
 
 @define(u'cons', True)
-def list_cons(_, __, objs):
+def list_cons(_, _1, objs):
     return objects.OCons(objs[0], objs[1])
 
 @define(u'car', True)
-def list_car(_, __, objs):
+def list_car(_, _1, objs):
     return objs[0].car
 
 @define(u'cdr', True)
-def list_cdr(_, __, objs):
+def list_cdr(_, _1, objs):
     return objs[0].cdr
 
 @define(u'caar', True)
-def list_caar(_, __, objs):
+def list_caar(_, _1, objs):
     return objs[0].car.car
 
 @define(u'cadr', True)
-def list_cadr(_, __, objs):
+def list_cadr(_, _1, objs):
     return objs[0].cdr.car
 
 @define(u'cdar', True)
-def list_cdar(_, __, objs):
+def list_cdar(_, _1, objs):
     return objs[0].car.cdr
 
 @define(u'caddr', True)
-def list_caddr(_, __, objs):
+def list_caddr(_, _1, objs):
     return objs[0].cdr.cdr.car
 
 @define(u'append', True)
-def list_append(_, __, objs):
+def list_append(_, _1, objs):
     r = []
     for obj in objs:
         r.extend(obj)

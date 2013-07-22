@@ -76,11 +76,11 @@ def main():
 
     if extname == '.cdp':
         with open(argv[0], 'rb') as fi:
-            stack, r = schemepy.Stack.load(fi.read(), symbol.builtin)
+            stack, _ = schemepy.Stack.load(fi.read(), schemepy.builtin)
     elif extname == '.scc':
         with open(argv[0], 'rb') as fi:
             code = cPickle.load(fi)
-        stack = schemepy.init(code, symbol.builtin)
+        stack = schemepy.init(code, schemepy.builtin)
     else:
         with open(argv[0], 'r') as f:
             data = f.read()
@@ -94,4 +94,5 @@ def main():
         coredump = None
     print stack.trampoline(debug=dbg, coredump=coredump)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()

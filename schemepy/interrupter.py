@@ -5,13 +5,13 @@
 @author: shell.xu
 '''
 from collections import deque
-from objects import *
+from schemepy.objects import nil, to_list, reversed_list, OSymbol, OQuote, OCons
 
 __all__ = [
     'BreakException', 'ExitException', 'ResumeInfo', 'OFunction',
     'PrognStatus', 'FuncStatus', 'CallStatus', 'Envs', 'Stack', 'init']
 
-FUNC_DEBUG=False
+FUNC_DEBUG = False
 
 class BreakException(StandardError):
     pass
