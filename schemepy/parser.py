@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2010-11-02
@@ -8,7 +8,7 @@ import re
 
 split_code_re = re.compile("([()' \n\r\t])")
 string_cutter_re = re.compile('(".*?(?<!\\\\)"|;.*?\n)', re.S)
-replace_tab = [(u'\\t', u'\t'), (u'\\n', u'\n'), (u'\\', u'')]
+replace_tab = [('\\t', '\t'), ('\\n', '\n'), ('\\', '')]
 def split_code(code):
     line = 1
     for s in string_cutter_re.split(code):
@@ -31,10 +31,10 @@ def split_code(code):
                 elif c not in ' \t\n\r':
                     yield c, line
 
-symbol_pairs = {u'(': u')',}
+symbol_pairs = {'(': ')',}
 def build_block(chunks, igcmt, term=True):
     for c, line in chunks:
-        if igcmt and c.startswith(u';'):
+        if igcmt and c.startswith(';'):
             continue
         elif term and c == ')':
             return
@@ -47,5 +47,5 @@ def build_block(chunks, igcmt, term=True):
         raise Exception('parenthesis not close')
 
 def split_code_tree(code, igcmt=True):
-    assert type(code) == unicode, 'input not unicode'
+    assert type(code) == str, 'input not unicode'
     return build_block(split_code(code), igcmt, False)

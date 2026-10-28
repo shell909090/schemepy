@@ -10,3 +10,11 @@ parser
 .coverage*
 covhtml
 report.txt
+.venv/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.ruff_cache/
+*.cdp
+*.scc

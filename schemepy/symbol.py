@@ -1,10 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2010-11-02
 @author: shell.xu
 '''
 from schemepy import parser, objects, interrupter
+from functools import reduce
 
 builtin = {}
 def define(name, evaled=None):
@@ -20,7 +21,7 @@ class DefineStatus(object):
         self.name, self.objs = name, objs
 
     def __repr__(self):
-        return u'define %s' % self.name
+        return 'define %s' % self.name
 
     def __call__(self, stack, envs, objs):
         if objs is None:
@@ -28,7 +29,7 @@ class DefineStatus(object):
         envs.add(self.name, objs)
         return objects.nil
 
-@define(u'define', False)
+@define('define', False)
 def sym_define(stack, envs, objs):
     # FIXME:
     if isinstance(objs[0], objects.OCons):
@@ -40,42 +41,43 @@ def sym_define(stack, envs, objs):
         return stack.jump(DefineStatus(objs[0].name, objs[1]), envs)
     raise Exception('define format error')
 
-@define(u'lambda', False)
+@define('lambda', False)
 def sym_lambda(_, envs, objs):
     # FIXME:
-    return interrupter.OFunction(u'<lambda>', envs, objs.car, objs.cdr)
+    return interrupter.OFunction('<lambda>', envs, objs.car, objs.cdr)
 
-@define(u'begin', False)
+@define('begin', False)
 def sym_begin(stack, envs, objs):
     return stack.jump(interrupter.PrognStatus(objs), envs)
 
-@define(u'compile', True)
+@define('compile', True)
 def sym_compile(_, _1, objs):
-    return interrupter.scompile(parser.split_code_tree(objs[0]))
+    return objects.scompile(parser.split_code_tree(objs[0]))
 
-@define(u'eval', True)
+@define('eval', True)
 def sym_eval(stack, envs, objs):
     env = objs.get(1)
     if env is None:
         env = envs
     return stack.jump(objs[0], env)
 
-@define(u'apply', True)
+@define('apply', True)
 def sym_apply(stack, envs, objs):
-    assert isinstance(objs[0], objects.OSymbol)
-    func = envs[objs[0].name]
+    func = objs[0]
+    if isinstance(func, objects.OSymbol):
+        func = envs[func.name]
     return stack.jump(interrupter.CallStatus(
-            func, objects.nil, objs[1]), envs)
+            func, objs[1], objects.nil), envs)
 
-@define(u'user-init-environment', True)
+@define('user-init-environment', True)
 def user_init_env(stack, _, _1):
     return stack[0][1]
 
-@define(u'current-environment', True)
+@define('current-environment', True)
 def cur_env(stack, _, _1):
     return stack[-1][1]
 
-@define(u'import', True)
+@define('import', True)
 def sym_import(_, envs, objs):
     mod = __import__(objs[0])
     envs.fast.update(mod.builtin)
@@ -86,7 +88,7 @@ class LetStatus(object):
         self.func, self.syms, self.envs, self.ast = func, syms, envs.fork(), ast
 
     def __repr__(self):
-        return u'let ' + str(self.func)
+        return 'let ' + str(self.func)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -97,47 +99,47 @@ class LetStatus(object):
             return stack.jump(interrupter.PrognStatus(self.func), self.envs)
         return stack.call(self.syms[0][1], self.envs if self.ast else envs)
 
-@define(u'let', False)
+@define('let', False)
 def sym_let(stack, envs, objs):
     return stack.jump(LetStatus(objs.cdr, objs[0], envs, False), envs)
 
-@define(u'let*', False)
+@define('let*', False)
 def sym_letA(stack, envs, objs):
     return stack.jump(LetStatus(objs.cdr, objs[0], envs, True), envs)
 
-@define(u'symbol?', True)
+@define('symbol?', True)
 def is_symbol(_, _1, objs):
     return isinstance(objs[0], objects.OSymbol)
 
-@define(u'eq?', True)
+@define('eq?', True)
 def is_eq(_, _1, objs):
     o = objs[0]
-    return all(map(lambda i: i is o, objs))
+    return all([i is o for i in objs])
 
 def obj_equal(l, r):
     if l.__class__ is not l.__class__:
         return False
-    if isinstance(l, basestring):
+    if isinstance(l, str):
         return l == r
     if hasattr(l, '__iter__'):
-        return all(map(lambda i: obj_equal(*i), zip(l, r)))
+        return all([obj_equal(*i) for i in zip(l, r)])
     return l is r
 
-@define(u'equal?', True)
+@define('equal?', True)
 def is_equal(_, _1, objs):
     o = objs[0]
-    return all(map(lambda i: obj_equal(i, o), objs))
+    return all([obj_equal(i, o) for i in objs])
 
 # logic functions
-@define(u'not', True)
+@define('not', True)
 def logic_not(_, _1, objs):
     return not objs[0]
 
-@define(u'and', True)
+@define('and', True)
 def logic_and(_, _1, objs):
     return reduce(lambda x, y: x and y, objs)
 
-@define(u'or', True)
+@define('or', True)
 def logic_or(_, _1, objs):
     return reduce(lambda x, y: x or y, objs)
 
@@ -146,7 +148,7 @@ class CondStatus(object):
         self.conds, self.dft = conds, dft
 
     def __repr__(self):
-        return u'cond %s' % self.conds[0]
+        return 'cond %s' % self.conds[0]
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -159,46 +161,46 @@ class CondStatus(object):
                 return objects.nil
             return stack.jump(self.dft, envs)
         if isinstance(self.conds[0][0], objects.OSymbol)\
-                and self.conds[0][0].name == u'else':
+                and self.conds[0][0].name == 'else':
             return stack.jump(self.conds[0][1], envs)
         return stack.call(self.conds[0][0], envs)
 
-@define(u'cond', False)
+@define('cond', False)
 def logic_cond(stack, envs, objs):
     return stack.jump(CondStatus(objs), envs)
 
-@define(u'if', False)
+@define('if', False)
 def logic_if(stack, envs, objs):
     return stack.jump(CondStatus(objects.OCons(
                 objects.to_list([objs[0], objs[1]])), objs.get(2)), envs)
 
-@define(u'when', False)
+@define('when', False)
 def logic_when(stack, envs, objs):
     return stack.jump(CondStatus(objects.OCons(objs)), envs)
 
 # string functions
-@define(u'string=?', True)
+@define('string=?', True)
 def str_equal(_, _1, objs):
     o = objs[0]
     for i in objs:
-        if not isinstance(i, basestring):
+        if not isinstance(i, str):
             return False
         if i != o:
             return False
     return True
 
 # other functions
-@define(u'display', True)
-@define(u'error', True)
+@define('display', True)
+@define('error', True)
 def display(_, _1, objs):
-    print ' '.join(map(unicode, list(objs)))
+    print(' '.join(map(str, list(objs))))
     return objects.nil
 
-@define(u'newline', True)
+@define('newline', True)
 def newline(_, _1, _2):
-    print
+    print()
     return objects.nil
 
-@define(u'exit', True)
+@define('exit', True)
 def do_exit(_, _1, objs):
     raise interrupter.ExitException(objs)

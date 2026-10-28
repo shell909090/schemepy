@@ -1,32 +1,17 @@
-#!/usr/bin/make -f
+.PHONY: all build test check clean build-deb
+all: build
 
-## Author: xuzx@shterm.com
-## Version: $Id: Makefile,v 0.0 2011/05/18 06:19:52 shell Exp $
-## Keywords: 
-## X-URL: 
+build:
+	uv build
 
-all: build-rpm build-deb
+test:
+	uv run python -m unittest discover -v
+
+check:
+	ruff check --select E9,F63,F7,F82 schemepy test_scheme.py
 
 clean:
 	rm -rf build dist MANIFEST covhtml .coverage report.txt
 
-test:
-	python test_scheme.py
-
-check:
-	pymetrics -SC schemepy/*.py > report.txt
-	pychecker --no-shadowbuiltin -qtv6r -# 100 schemepy >> report.txt
-	pylint -d C0103,C0111 schemepy
-
-covhtml:
-	python-coverage run test_scheme.py
-	python-coverage html -d $@
-
-clean-deb:
-	fakeroot debian/rules clean
-
 build-deb:
 	dpkg-buildpackage -rfakeroot
-
-build-rpm:
-	python setup.py bdist_rpm

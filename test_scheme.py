@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2010-11-02
@@ -9,7 +9,7 @@ import schemepy
 
 def run_scheme(filepath):
     with open(filepath, 'r') as f: data = f.read()
-    code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+    code = schemepy.scompile(schemepy.split_code_tree(data))
     stack = schemepy.init(code, schemepy.builtin)
     return stack.trampoline()
 
@@ -59,22 +59,22 @@ class TestParser(unittest.TestCase):
 
     def test_code_tree(self):
         with open('code/same-partiy.scm', 'r') as f: data = f.read()
-        code = schemepy.split_code_tree(data.decode('utf-8'))
+        code = schemepy.split_code_tree(data)
         self.assertEqual(
             unfold_code(code),
-            [[u'define', [u'same-partiy', u'a', u'.', u'l'],
-              [u'define', [u'same-even', u'a', u'l'],
-               [u'cond',
-                [[u'null?', u'l'], u"'", []],
-                [[u'=', u'a', [u'remainder', [u'car', u'l'], u'2']],
-                 [u'cons', [u'car', u'l'], [u'same-even', u'a', [u'cdr', u'l']]]],
-                [u'else', [u'same-even', u'a', [u'cdr', u'l']]]]],
-              [u'same-even', [u'remainder', u'a', u'2'], u'l']],
-             [u'same-partiy', u'1', u'3', u'4', u'5', u'6', u'7']])
+            [['define', ['same-partiy', 'a', '.', 'l'],
+              ['define', ['same-even', 'a', 'l'],
+               ['cond',
+                [['null?', 'l'], "'", []],
+                [['=', 'a', ['remainder', ['car', 'l'], '2']],
+                 ['cons', ['car', 'l'], ['same-even', 'a', ['cdr', 'l']]]],
+                ['else', ['same-even', 'a', ['cdr', 'l']]]]],
+              ['same-even', ['remainder', 'a', '2'], 'l']],
+             ['same-partiy', '1', '3', '4', '5', '6', '7']])
 
     def test_compiled_code(self):
         with open('code/same-partiy.scm', 'r') as f: data = f.read()
-        code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+        code = schemepy.scompile(schemepy.split_code_tree(data))
         self.assertEqual(
             str(code),
             '''((define (same-partiy a . l)
@@ -95,7 +95,7 @@ def sym_pause(stack, envs, objs):
 
 class TestBreak(unittest.TestCase):
 
-    src = u'''
+    src = '''
 (pause "abc")
 (pause "resume1")
 (+ 1 2)
@@ -115,15 +115,55 @@ class TestBreak(unittest.TestCase):
             stack.trampoline(r, coredump=breakcode.append)
         self.assertEqual(be.exception.args[0][0], 'abc')
 
-        stack, r = schemepy.Stack.load(''.join(breakcode), builtin_)
+        stack, r = schemepy.Stack.load(b''.join(breakcode), builtin_)
         breakcode = []
         with self.assertRaises(schemepy.BreakException) as be:
             stack.trampoline(r, coredump=breakcode.append)
         self.assertEqual(be.exception.args[0][0], 'resume1')
 
-        stack, r = schemepy.Stack.load(''.join(breakcode), builtin_)
+        stack, r = schemepy.Stack.load(b''.join(breakcode), builtin_)
         breakcode = []
         r = stack.trampoline(r, coredump=breakcode.append)
         self.assertEqual(r, 3)
+
+class TestMigration(unittest.TestCase):
+    def evaluate(self, source):
+        return schemepy.init(schemepy.scompile(schemepy.split_code_tree(source)), schemepy.builtin).trampoline()
+
+    def test_division(self):
+        self.assertEqual(self.evaluate('(/ 7 2)'), 3)
+        self.assertEqual(self.evaluate('(/ -7 2)'), -4)
+        self.assertEqual(self.evaluate('(/ 7.0 2)'), 3.5)
+
+    def test_apply_order(self):
+        self.assertEqual(self.evaluate("(apply - '(10 3 2))"), 5)
+
+    def test_queens(self):
+        from pathlib import Path
+        source = Path('code/queens.scm').read_text().replace('(display (queens 8))', '').replace('(newline)', '')
+        solutions = list(self.evaluate(source + '\n(queens 8)'))
+        self.assertEqual(len(solutions), 92)
+        seen = set()
+        for solution in solutions:
+            pairs = [(p.car, p.cdr) for p in solution]
+            self.assertEqual(len(pairs), 8)
+            for values in ([x for x,y in pairs], [y for x,y in pairs],
+                           [x+y for x,y in pairs], [x-y for x,y in pairs]):
+                self.assertEqual(len(set(values)), 8)
+            seen.add(tuple(pairs))
+        self.assertEqual(len(seen), 92)
+
+    def test_compiled_cli(self):
+        import subprocess
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / '中文.scm'
+            source.write_text('(display "你好") (+ 1 2)', encoding='utf-8')
+            def run(*args):
+                return subprocess.check_output([sys.executable, '-m', 'schemepy', *map(str,args)], text=True)
+            run('-c', source)
+            self.assertEqual(run(source), run(source.with_suffix('.scc')))
+            self.assertEqual(run(source), '你好\n3\n')
 
 if __name__ == '__main__': unittest.main()

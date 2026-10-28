@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2010-11-02
@@ -95,30 +95,30 @@ class OQuote(SchemeObject):
     def __init__(self):
         self.objs = None
 
-is_num_re = re.compile('-?[0-9\.]+')
+is_num_re = re.compile(r'-?[0-9\.]+')
 def scompile(obj):
     if not isinstance(obj, tuple):
-        l = map(scompile, obj)
+        l = list(map(scompile, obj))
         for i, o in enumerate(l):
             if isinstance(o, OQuote):
                 o.objs = l.pop(i+1)
         return to_list(l)
     obj, line = obj
-    if isinstance(obj, str):
+    if isinstance(obj, bytes):
         obj = obj.decode('utf-8')
-    if obj[0] == u'#':
-        r = {u't': True, u'f': False}.get(obj[1:])
+    if obj[0] == '#':
+        r = {'t': True, 'f': False}.get(obj[1:])
         assert r is not None, 'boolean name error: %s' % obj
         return r
-    elif obj[0] == u'"':
+    elif obj[0] == '"':
         assert obj[-1] == '"', 'quote not close in line %d' % line
         return obj[1:-1]
-    elif obj == u"'":
+    elif obj == "'":
         return OQuote()
     elif is_num_re.match(obj):
-        if obj == u'.':
+        if obj == '.':
             return OSymbol(obj)
-        if u'.' in obj:
+        if '.' in obj:
             return float(obj)
         return int(obj)
     else:
@@ -126,29 +126,27 @@ def scompile(obj):
 
 def format_list(o, lv=0):
     if o.cdr is nil:
-        return u'(%s)' % format_obj(o.car)
+        return '(%s)' % format_obj(o.car)
     elif not isinstance(o.cdr, OCons):
-        return u'(%s . %s)' % (format_obj(o.car), format_obj(o.cdr))
-    if isinstance(o[0], OSymbol) and o[0].name == u'define':
-        s = u'(%s %s\n' % (format_obj(o[0], lv), format_obj(o[1], lv))
+        return '(%s . %s)' % (format_obj(o.car), format_obj(o.cdr))
+    if isinstance(o[0], OSymbol) and o[0].name == 'define':
+        s = '(%s %s\n' % (format_obj(o[0], lv), format_obj(o[1], lv))
         for i in o.cdr.cdr:
             s += '  ' * (lv+1) + format_obj(i, lv+1) + '\n'
-        return s[:-1] + u')'
-    s = u'(%s)' % ' '.join(format_obj(i, lv) for i in o)
+        return s[:-1] + ')'
+    s = '(%s)' % ' '.join(format_obj(i, lv) for i in o)
     if (2*lv + len(s)) < FORMAT_WIDTH:
         return s
-    s = u'(%s\n' % format_obj(o[0], lv)
+    s = '(%s\n' % format_obj(o[0], lv)
     for i in o.cdr:
-        s += '  ' * (lv+1) + format_obj(i, lv+1) + u'\n'
-    return s[:-1]+u')'
+        s += '  ' * (lv+1) + format_obj(i, lv+1) + '\n'
+    return s[:-1]+')'
 
 def format_obj(o, lv=0):
     return {
-        bool: {True: u'#t', False: u'#f'}.get,
-        str: lambda o: u'"%s"' % str(o),
-        unicode: lambda o: '"%s"' % unicode(o),
-        ONil: lambda o: u'()',
+        bool: {True: '#t', False: '#f'}.get,
+        ONil: lambda o: '()',
         OSymbol: lambda o: o.name,
-        OQuote: lambda o: u"'" + format_obj(o.objs),
+        OQuote: lambda o: "'" + format_obj(o.objs),
         OCons: lambda o: format_list(o, lv),
     }.get(o.__class__, str)(o)

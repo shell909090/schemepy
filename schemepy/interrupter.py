@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2012-12-18
 @author: shell.xu
 '''
 from collections import deque
-from schemepy.objects import nil, to_list, reversed_list, OSymbol, OQuote, OCons
+from schemepy.objects import nil, to_list, reversed_list, OSymbol, OQuote, OCons, format_list
 
 __all__ = [
     'BreakException', 'ExitException', 'ResumeInfo', 'OFunction',
@@ -13,10 +13,10 @@ __all__ = [
 
 FUNC_DEBUG = False
 
-class BreakException(StandardError):
+class BreakException(Exception):
     pass
 
-class ExitException(StandardError):
+class ExitException(Exception):
     pass
 
 class ResumeInfo(object):
@@ -29,19 +29,19 @@ class OFunction(object):
         self.params, self.objs, self.evaled = params, objs, True
 
     def __repr__(self):
-        return u'<function %s>' % self.name
+        return '<function %s>' % self.name
 
     def __call__(self, stack, _, objs):
         r, pn, pv = {}, self.params, objs
         while pn is not nil and pv is not nil:
-            if pn[0].name == u'.':
+            if pn[0].name == '.':
                 r[pn[1].name] = pv
                 break
             r[pn[0].name] = pv[0]
             pn, pv = pn.cdr, pv.cdr
         newenv = self.envs.fork(r)
         if FUNC_DEBUG:
-            print u'call', self.name, newenv.stack[-1]
+            print('call', self.name, newenv.stack[-1])
         return stack.jump(PrognStatus(self.objs), newenv)
 
 class PrognStatus(object):
@@ -49,7 +49,7 @@ class PrognStatus(object):
         self.objs, self.rslt = objs, None
 
     def __repr__(self):
-        return u'progn ' + str(self.objs)
+        return 'progn ' + str(self.objs)
 
     def __call__(self, stack, envs, _):
         if self.objs.cdr is nil:
@@ -77,7 +77,7 @@ class CallStatus(object):
         self.func, self.params, self.objs = func, params, objs
 
     def __repr__(self):
-        return u'call %s with (%s) <- (%s)' % (
+        return 'call %s with (%s) <- (%s)' % (
             self.func, self.params, self.objs)
 
     def __call__(self, stack, envs, objs):
@@ -122,11 +122,11 @@ class Stack(deque):
 
     def save(self, r):
         self[0][1].e[1] = {}
-        return __import__('cPickle').dumps((self, r), 2)
+        return __import__('pickle').dumps((self, r), 2)
 
     @staticmethod
     def load(data, builtin):
-        stack, r = __import__('cPickle').loads(data)
+        stack, r = __import__('pickle').loads(data)
         stack[0][1].e[1] = builtin
         for s in stack:
             s[1].genfast()
@@ -178,9 +178,9 @@ class Stack(deque):
                     r = r[0]
                 else: self.pop()
             return r
-        except ExitException, err:
+        except ExitException as err:
             return err.args[0]
-        except Exception, err:
+        except Exception as err:
             if coredump:
                 coredump(self.save(r))
             raise

@@ -1,50 +1,51 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2010-11-02
 @author: shell.xu
 '''
-import sys, cmd, getopt, cPickle
+import sys, cmd, getopt, pickle
 import schemepy
 from os import path
 
 def print_src(filename):
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
-    code = schemepy.split_code_tree(data.decode('utf-8'))
+    code = schemepy.split_code_tree(data)
     __import__('pprint').pprint(code)
 
 def compile_src(filename):
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
-    code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
-    __import__('pprint').pprint(code)
+    code = schemepy.scompile(schemepy.split_code_tree(data))
+    with open(path.splitext(filename)[0] + '.scc', 'wb') as output:
+        pickle.dump(code, output, protocol=pickle.HIGHEST_PROTOCOL)
 
 def indent_src(filename, stream):
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
-    code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+    code = schemepy.scompile(schemepy.split_code_tree(data))
     for i in code:
-        stream.write(unicode(i)+u'\n')
+        stream.write(str(i)+'\n')
 
 class REPL(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.prompt = u'> '
+        self.prompt = '> '
         self.env = schemepy.Envs(schemepy.to_list([{}, schemepy.builtin,]))
 
     def do_quit(self, _):
         ''' quit system '''
-        print u'quit'
-        sys.exit(-1)
+        print('quit')
+        return True
     do_EOF = do_quit
 
     def default(self, line):
         code = schemepy.scompile(schemepy.split_code_tree(line))
         stack = schemepy.Stack()
         stack.append((schemepy.PrognStatus(code), self.env))
-        print stack.trampoline()
+        print(stack.trampoline())
 
 def main():
     '''
@@ -61,7 +62,7 @@ def main():
     optlist, argv = getopt.getopt(sys.argv[1:], 'cdhinp')
     optdict = dict(optlist)
     if '-h' in optdict:
-        print main.__doc__
+        print(main.__doc__)
         return
     if '-c' in optdict:
         return compile_src(argv[0])
@@ -74,17 +75,18 @@ def main():
         return REPL().cmdloop()
     fname, extname = path.splitext(argv[0])
 
+    resume = None
     if extname == '.cdp':
         with open(argv[0], 'rb') as fi:
-            stack, _ = schemepy.Stack.load(fi.read(), schemepy.builtin)
+            stack, resume = schemepy.Stack.load(fi.read(), schemepy.builtin)
     elif extname == '.scc':
         with open(argv[0], 'rb') as fi:
-            code = cPickle.load(fi)
+            code = pickle.load(fi)
         stack = schemepy.init(code, schemepy.builtin)
     else:
-        with open(argv[0], 'r') as f:
+        with open(argv[0], 'r', encoding='utf-8') as f:
             data = f.read()
-        code = schemepy.scompile(schemepy.split_code_tree(data.decode('utf-8')))
+        code = schemepy.scompile(schemepy.split_code_tree(data))
         stack = schemepy.init(code, schemepy.builtin)
     dbg = schemepy.Debuger() if '-d' in optdict else None
     def coredump(data):
@@ -92,7 +94,7 @@ def main():
             fo.write(data)
     if '-n' in optdict:
         coredump = None
-    print stack.trampoline(debug=dbg, coredump=coredump)
+    print(stack.trampoline(resume, debug=dbg, coredump=coredump))
 
 if __name__ == '__main__':
     main()

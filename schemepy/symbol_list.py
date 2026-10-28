@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
 @date: 2013-06-25
@@ -8,47 +8,47 @@ from schemepy import objects, interrupter, symbol
 define = symbol.define
 
 # list functions
-@define(u'list', True)
+@define('list', True)
 def list_list(_, _1, objs):
     return objs
 
-@define(u'null?', True)
+@define('null?', True)
 def list_null(_, _1, objs):
     return objs[0] is objects.nil
 
-@define(u'pair?', True)
+@define('pair?', True)
 def list_pair(_, _1, objs):
     return isinstance(objs[0], objects.OCons)
 
-@define(u'cons', True)
+@define('cons', True)
 def list_cons(_, _1, objs):
     return objects.OCons(objs[0], objs[1])
 
-@define(u'car', True)
+@define('car', True)
 def list_car(_, _1, objs):
     return objs[0].car
 
-@define(u'cdr', True)
+@define('cdr', True)
 def list_cdr(_, _1, objs):
     return objs[0].cdr
 
-@define(u'caar', True)
+@define('caar', True)
 def list_caar(_, _1, objs):
     return objs[0].car.car
 
-@define(u'cadr', True)
+@define('cadr', True)
 def list_cadr(_, _1, objs):
     return objs[0].cdr.car
 
-@define(u'cdar', True)
+@define('cdar', True)
 def list_cdar(_, _1, objs):
     return objs[0].car.cdr
 
-@define(u'caddr', True)
+@define('caddr', True)
 def list_caddr(_, _1, objs):
     return objs[0].cdr.cdr.car
 
-@define(u'append', True)
+@define('append', True)
 def list_append(_, _1, objs):
     r = []
     for obj in objs:
@@ -60,19 +60,19 @@ class MapStatus(object):
         self.func, self.params, self.r = func, params, []
 
     def __repr__(self):
-        return u'map %s -> (%s)' % (self.func, self.params)
+        return 'map %s -> (%s)' % (self.func, self.params)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
             self.r.append(objs)
         if self.params[0] is objects.nil:
             return objects.to_list(self.r)
-        t = map(lambda i: i.car, self.params)
-        self.params = map(lambda i: i.cdr, self.params)
+        t = [i.car for i in self.params]
+        self.params = [i.cdr for i in self.params]
         return stack.call(interrupter.CallStatus(
                 self.func, objects.to_list(t), objects.nil), envs)
 
-@define(u'map', True)
+@define('map', True)
 def list_map(stack, envs, objs):
     return stack.jump(MapStatus(objs.car, objs.cdr), envs)
 
@@ -81,7 +81,7 @@ class FilterStatus(object):
         self.func, self.params, self.r = func, params, []
 
     def __repr__(self):
-        return u'filter %s -> (%s)' % (self.func, self.params)
+        return 'filter %s -> (%s)' % (self.func, self.params)
 
     def __call__(self, stack, envs, objs):
         if objs is not None:
@@ -93,6 +93,6 @@ class FilterStatus(object):
         return stack.call(interrupter.CallStatus(
                 self.func, objects.OCons(self.params.car), objects.nil), envs)
 
-@define(u'filter', True)
+@define('filter', True)
 def list_filter(stack, envs, objs):
     return stack.jump(FilterStatus(objs[0], objs[1]), envs)

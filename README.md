@@ -45,3 +45,21 @@ scheme是通常的执行入口。执行.cdp文件时按照coredump文件加载�
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+## Python 3 与 uv
+
+需要 Python 3.11+，没有第三方运行依赖。
+
+```sh
+uv sync
+uv run scheme code/change-money.scm
+uv run scheme -c code/change-money.scm
+uv run scheme code/change-money.scc
+uv run python -m unittest discover -v
+uv build
+```
+
+也可以用 `uv run python -m schemepy` 启动交互环境。
+整数相除保留原 Python 2 实现的向下取整行为，浮点数参与时使用浮点除法。
+旧 Python 2 生成的 `.scc`、`.cdp` 文件不保证兼容，请重新生成。
+这些文件使用 pickle，仅加载可信来源的文件。
